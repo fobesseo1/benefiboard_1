@@ -2,13 +2,13 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { CurrentUserType, RepostType } from '@/types/types';
 import Repost_list_mainpage from '../repost/_component/repost_list_mainpage';
 
 interface RepostSectionProps {
   title: string;
-  initialPosts: RepostType[];
+  repostsPromise: Promise<RepostType[]>;
   cacheKey: string;
   cacheTime: number;
   currentUser: CurrentUserType | null;
@@ -17,12 +17,13 @@ interface RepostSectionProps {
 
 export default function RepostSection({
   title,
-  initialPosts,
+  repostsPromise,
   cacheKey,
   cacheTime,
   currentUser,
   linkPath,
 }: RepostSectionProps) {
+  const initialPosts = use(repostsPromise);
   const [posts, setPosts] = useState<RepostType[]>(initialPosts);
 
   useEffect(() => {

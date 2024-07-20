@@ -9,19 +9,21 @@ import RepostSection from './_components/RepostSection';
 import PostsSection from './_components/PostsSection';
 
 export default async function Home() {
-  const currentUser = await getCurrentUser();
-  const bestReposts = await fetchBestReposts();
-  const basicReposts = await fetchBasicReposts();
-  const posts = await fetchPosts();
+  const currentUserPromise = getCurrentUser();
+  const bestRepostsPromise = fetchBestReposts();
+  const basicRepostsPromise = fetchBasicReposts();
+  const postsPromise = fetchPosts();
+
+  const currentUser = await currentUserPromise;
 
   return (
     <OnboardingLogicWrapper currentUser={currentUser}>
       <Suspense fallback={<SkeletonLoader />}>
         <RepostSection
           title="인기 커뮤니티 오늘의 베스트 10"
-          initialPosts={bestReposts}
+          repostsPromise={bestRepostsPromise}
           cacheKey="bestReposts"
-          cacheTime={24 * 60 * 60 * 1000} // 24시간
+          cacheTime={24 * 60 * 60 * 1000}
           currentUser={currentUser}
           linkPath="/repost/best"
         />
@@ -29,15 +31,15 @@ export default async function Home() {
       <Suspense fallback={<SkeletonLoader />}>
         <RepostSection
           title="인기 커뮤니티 실시간 베스트 10"
-          initialPosts={basicReposts}
+          repostsPromise={basicRepostsPromise}
           cacheKey="basicReposts"
-          cacheTime={3 * 60 * 60 * 1000} // 3시간
+          cacheTime={3 * 60 * 60 * 1000}
           currentUser={currentUser}
           linkPath="/repost"
         />
       </Suspense>
       <Suspense fallback={<SkeletonLoader />}>
-        <PostsSection posts={posts} currentUser={currentUser} />
+        <PostsSection postsPromise={postsPromise} currentUser={currentUser} />
       </Suspense>
     </OnboardingLogicWrapper>
   );
