@@ -15,14 +15,16 @@ export const revalidate = 1800;
 // 각 섹션을 위한 서버 컴포넌트
 const PostsSectionWrapper = async () => {
   const posts = await fetchPosts();
-  return ({ currentUser }: { currentUser: CurrentUserType | null }) => (
+  const Component = ({ currentUser }: { currentUser: CurrentUserType | null }) => (
     <PostsSection posts={posts} currentUser={currentUser} />
   );
+  Component.displayName = 'PostsSectionWrapper';
+  return Component;
 };
 
 const BestRepostsSectionWrapper = async () => {
   const bestReposts = await fetchBestReposts();
-  return ({ currentUser }: { currentUser: CurrentUserType | null }) => (
+  const Component = ({ currentUser }: { currentUser: CurrentUserType | null }) => (
     <RepostSection
       title="인기 커뮤니티 오늘의 베스트 10"
       posts={bestReposts}
@@ -30,11 +32,13 @@ const BestRepostsSectionWrapper = async () => {
       currentUser={currentUser}
     />
   );
+  Component.displayName = 'BestRepostsSectionWrapper';
+  return Component;
 };
 
 const BasicRepostsSectionWrapper = async () => {
   const basicReposts = await fetchBasicReposts();
-  return ({ currentUser }: { currentUser: CurrentUserType | null }) => (
+  const Component = ({ currentUser }: { currentUser: CurrentUserType | null }) => (
     <RepostSection
       title="인기 커뮤니티 실시간 베스트 10"
       posts={basicReposts}
@@ -42,6 +46,8 @@ const BasicRepostsSectionWrapper = async () => {
       currentUser={currentUser}
     />
   );
+  Component.displayName = 'BasicRepostsSectionWrapper';
+  return Component;
 };
 
 export default async function Home() {
