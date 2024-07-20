@@ -43,7 +43,7 @@ export default function Repost_list_mainpage({
   linkPath,
   userId,
 }: RepostDataProps) {
-  const [posts] = useState<RepostType[]>(initialPosts);
+  const [posts, setPosts] = useState<RepostType[]>(initialPosts || []);
   const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
@@ -119,7 +119,7 @@ export default function Repost_list_mainpage({
           <p className="font-semibold text-white">더보기</p>
         </div>
       </Link>
-      {posts.length ? (
+      {posts && posts.length > 0 ? (
         posts.map((post) => (
           <div key={post.id}>
             <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto">
