@@ -3,7 +3,7 @@
 
 import { cache } from 'react';
 import createSupabaseServerClient from '@/lib/supabse/server';
-import { RepostType } from '../_component/repost_list';
+import { RepostType } from '@/types/types';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시
 

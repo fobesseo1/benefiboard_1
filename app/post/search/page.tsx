@@ -1,44 +1,26 @@
 // app/post/search/page.tsx
-import createSupabaseServerClient from '@/lib/supabse/server';
-import SearchBar from '../_component/SearchBar';
+import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
+import SearchBar from '../_component/SearchBar';
 import PagedPosts from '../_component/PagedPosts';
 import FixedIconGroup from '../_component/FixedIconGroup';
 import { CurrentUserType, PostType } from '../../../types/types';
 import { getPostsData } from '../_action/postData';
+import { searchPosts } from './utils';
 
-export async function searchPosts(
-  query: string,
-  page: number = 1,
-  limit: number = 20
-): Promise<{ posts: PostType[]; totalCount: number }> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error, count } = await supabase
-    .from('post')
-    .select('*', { count: 'exact' })
-    .ilike('title', `%${query}%`)
-    .order('created_at', { ascending: false })
-    .range((page - 1) * limit, page * limit - 1);
-
-  if (error) {
-    console.error('Error searching posts:', error);
-    return { posts: [], totalCount: 0 };
-  }
-
-  return { posts: data || [], totalCount: count || 0 };
+interface PostSearchPageProps {
+  searchParams: {
+    query: string;
+    page: string;
+  };
 }
 
-export default async function PostSearchPage({
-  searchParams,
-}: {
-  searchParams: { query: string; page: string };
-}) {
+const PostSearchPage: React.FC<PostSearchPageProps> = async ({ searchParams }) => {
   const query = searchParams.query || '';
   const page = parseInt(searchParams.page || '1', 10);
   const { posts: initialPosts, totalCount } = await searchPosts(query, page);
 
   const currentUser: CurrentUserType | null = await getCurrentUser();
-  // 검색 제안을 위한 데이터 가져오기
   const posts = await getPostsData();
   const suggestions: PostType[] = Array.isArray(posts) ? posts : [];
   const titleSuggestions = Array.from(
@@ -68,4 +50,6 @@ export default async function PostSearchPage({
       <FixedIconGroup />
     </div>
   );
-}
+};
+
+export default PostSearchPage;
