@@ -15,6 +15,8 @@ interface RepostSearchListProps {
   currentUser: CurrentUserType | null;
   isBestPosts: boolean;
   initialSearchTerm: string;
+  initialPosts?: RepostType[];
+  initialTotalPages?: number;
 }
 
 const POSTS_PER_PAGE = 20;
@@ -23,13 +25,15 @@ export default function RepostSearchList({
   currentUser,
   isBestPosts,
   initialSearchTerm,
+  initialPosts = [],
+  initialTotalPages = 1,
 }: RepostSearchListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [posts, setPosts] = useState<RepostType[]>([]);
+  const [posts, setPosts] = useState<RepostType[]>(initialPosts);
   const [loading, setLoading] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
-  const [readPosts, setReadPosts] = useState<string[]>([]);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
 
@@ -44,17 +48,18 @@ export default function RepostSearchList({
 
   const fetchSearchResults = useCallback(
     async (term: string, pageNum: number) => {
+      if (posts.length > 0 && pageNum === 1) return; // 초기 데이터가 있으면 첫 페이지 로딩 스킵
       setLoading(true);
       try {
         const { data: searchResults, totalCount } = isBestPosts
           ? await fetchBestReposts(term, pageNum, POSTS_PER_PAGE)
           : await fetchReposts(term, pageNum, POSTS_PER_PAGE);
 
-        setPosts(searchResults);
+        setPosts((prevPosts) => (pageNum === 1 ? searchResults : [...prevPosts, ...searchResults]));
         setTotalPages(Math.ceil((totalCount ?? 0) / POSTS_PER_PAGE));
       } catch (error) {
         console.error('Error fetching search results:', error);
-        setPosts([]);
+        if (pageNum === 1) setPosts([]);
       } finally {
         setLoading(false);
       }
@@ -69,7 +74,14 @@ export default function RepostSearchList({
   useEffect(() => {
     const readPostsKey = currentUser?.id ? `readPosts_${currentUser.id}` : 'readPosts';
     const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
-    setReadPosts(storedReadPosts);
+    const readPostsObject = storedReadPosts.reduce(
+      (acc: Record<string, boolean>, postId: string) => {
+        acc[postId] = true;
+        return acc;
+      },
+      {}
+    );
+    setReadPosts(readPostsObject);
   }, [currentUser]);
 
   const handlePageChange = useCallback(
@@ -88,22 +100,17 @@ export default function RepostSearchList({
 
   const handlePostClick = useCallback(
     async (post: RepostType) => {
-      const readPostsKey = currentUser?.id ? `readPosts_${currentUser.id}` : 'readPosts';
       setReadPosts((prev) => {
-        if (!prev.includes(post.id.toString())) {
-          const newReadPosts = [...prev, post.id.toString()];
-          localStorage.setItem(readPostsKey, JSON.stringify(newReadPosts));
-          return newReadPosts;
-        }
-        return prev;
+        const newReadPosts = { ...prev, [post.id.toString()]: true };
+        const readPostsKey = currentUser?.id ? `readPosts_${currentUser.id}` : 'readPosts';
+        localStorage.setItem(readPostsKey, JSON.stringify(Object.keys(newReadPosts)));
+        return newReadPosts;
       });
 
       if (currentUser?.donation_id) {
-        try {
-          await addDonationPoints(currentUser.id, currentUser.donation_id, 5);
-        } catch (error) {
-          console.error('Error adding donation points:', error);
-        }
+        addDonationPoints(currentUser.id, currentUser.donation_id, 5).catch((error) =>
+          console.error('Error adding donation points:', error)
+        );
       }
 
       setSelectedPost(post);
@@ -117,7 +124,7 @@ export default function RepostSearchList({
     setSelectedPost(null);
   }, []);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading && posts.length === 0) return <p>Loading...</p>;
   if (posts.length === 0) return <p>No results found.</p>;
 
   return (
@@ -128,9 +135,10 @@ export default function RepostSearchList({
           post={post}
           currentUser={currentUser}
           onPostClick={handlePostClick}
-          isRead={readPosts.includes(post.id.toString())}
+          isRead={readPosts[post.id.toString()] || false}
         />
       ))}
+      {loading && <p>Loading more...</p>}
       <div className="flex justify-between items-center mt-4">
         <Button onClick={() => handlePageChange(Math.max(page - 1, 1))} disabled={page === 1}>
           Previous Page
@@ -140,7 +148,7 @@ export default function RepostSearchList({
         </span>
         <Button
           onClick={() => handlePageChange(Math.min(page + 1, totalPages))}
-          disabled={page === totalPages}
+          disabled={page === totalPages || loading}
         >
           Next Page
         </Button>
