@@ -139,6 +139,8 @@ const PostItem = React.memo(
   )
 );
 
+PostItem.displayName = 'PostItem';
+
 export default function PagedPosts({
   initialPosts,
   userId,
