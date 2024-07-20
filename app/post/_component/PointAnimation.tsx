@@ -101,11 +101,11 @@ export function PointAnimation({
     <>
       {randomNumber !== null && (
         <div className="fixed flex flex-col items-center top-16 left-0 -translate-x-1/2 -translate-y-1/2 gap-4 z-50 ">
-          <div className="flex items-center justify-center animate-bounce">
+          <div className="flex items-center justify-center ">
             {randomNumber === 0 ? <EmojiSad /> : <EmojiHaha />}
           </div>
           {currentUser && (
-            <div className="w-72 h-16 rounded-xl bg-gradient-to-b from-pink-100 to-pink-200 flex items-center justify-center animate-bounce">
+            <div className="w-72 h-16 rounded-xl bg-gradient-to-b from-pink-100 to-pink-200 flex items-center justify-center ">
               <p className="text-pink-400 text-xl font-semibold">
                 ♡ {currentUser?.partner_name}
                 <span className="text-sm"> 님에게 기부</span> ♡
@@ -119,7 +119,7 @@ export function PointAnimation({
                 randomNumber === 0
                   ? 'bg-gray-200'
                   : 'bg-gradient-to-r from-emerald-100 to-emerald-200 border-4 border-emerald-100'
-              } -mr-2 rounded-full p-2 w-40 h-40 relative animate-bounce`}
+              } -mr-2 rounded-full p-2 w-40 h-40 relative `}
               onClick={handleAnimationClick}
             >
               <p className="text-4xl font-bold text-emerald-400">
@@ -143,7 +143,7 @@ export function PointAnimation({
                 </p>
               )}
             </div>
-            <div className="-ml-2 rounded-full p-2 w-40 h-40 flex flex-col justify-center items-center gap-4 bg-gradient-to-r from-pink-200 to-pink-400 animate-bounce border-4 border-pink-200">
+            <div className="-ml-2 rounded-full p-2 w-40 h-40 flex flex-col justify-center items-center gap-4 bg-gradient-to-r from-pink-200 to-pink-400  border-4 border-pink-200">
               <p className="text-4xl font-bold text-pink-600">
                 <span className="text-4xl">+</span>
                 {randomNumber < 100 ? 5 : 500}
