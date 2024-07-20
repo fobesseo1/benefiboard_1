@@ -154,18 +154,21 @@ export default function PagedPosts({
   const [posts, setPosts] = useState<PostType[]>(initialPosts);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(currentPage);
-  const [readPosts, setReadPosts] = useState<Set<string>>(new Set());
+  const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
   const router = useRouter();
 
-  const totalPages = Math.ceil(totalCount / 20);
+  const totalPages = useMemo(() => Math.ceil(totalCount / 20), [totalCount]);
 
   useEffect(() => {
     if (userId) {
       const readPostsKey = `readPosts_${userId}`;
-      const storedReadPosts = new Set<string>(
-        JSON.parse(localStorage.getItem(readPostsKey) || '[]')
+      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
+      setReadPosts(
+        storedReadPosts.reduce((acc: Record<string, boolean>, postId: string) => {
+          acc[postId] = true;
+          return acc;
+        }, {})
       );
-      setReadPosts(storedReadPosts);
     }
   }, [userId]);
 
@@ -174,28 +177,28 @@ export default function PagedPosts({
     setPage(currentPage);
   }, [initialPosts, currentPage]);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        let newPosts;
-        if (searchTerm) {
-          newPosts = await fetchSearchPosts(searchTerm, page);
-        } else if (isBestPosts) {
-          newPosts = await fetchMorePosts(page, categoryId);
-        } else {
-          newPosts = await fetchMorePosts(page, categoryId);
-        }
-        setPosts(newPosts);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
+  const fetchPosts = useCallback(async () => {
+    setLoading(true);
+    try {
+      let newPosts;
+      if (searchTerm) {
+        newPosts = await fetchSearchPosts(searchTerm, page);
+      } else if (isBestPosts) {
+        newPosts = await fetchMorePosts(page, categoryId);
+      } else {
+        newPosts = await fetchMorePosts(page, categoryId);
       }
-    };
-
-    fetchPosts();
+      setPosts(newPosts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [page, searchTerm, isBestPosts, categoryId]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const handlePageChange = useCallback(
     (newPage: number) => {
@@ -207,12 +210,14 @@ export default function PagedPosts({
 
   const handlePostClick = useCallback(
     (post: PostType) => {
-      const updatedReadPosts = new Set<string>(readPosts).add(post.id);
-      setReadPosts(updatedReadPosts);
+      setReadPosts((prev) => ({ ...prev, [post.id]: true }));
 
       if (userId) {
         const readPostsKey = `readPosts_${userId}`;
-        localStorage.setItem(readPostsKey, JSON.stringify(Array.from(updatedReadPosts)));
+        localStorage.setItem(
+          readPostsKey,
+          JSON.stringify(Object.keys({ ...readPosts, [post.id]: true }))
+        );
       }
 
       // 포인트 추가 로직을 백그라운드에서 비동기적으로 실행
@@ -224,30 +229,29 @@ export default function PagedPosts({
       ]).catch((error) => {
         console.error('Error adding points:', error);
       });
+
+      // 즉시 페이지 이동
+      router.push(`/post/detail/${post.id}`);
     },
-    [readPosts, userId, currentUser]
+    [readPosts, userId, currentUser, router]
   );
 
   const memoizedPosts = useMemo(() => posts, [posts]);
 
+  if (loading && posts.length === 0) return <p>Loading...</p>;
+  if (posts.length === 0) return <p>No posts found.</p>;
+
   return (
     <div>
-      {memoizedPosts.length ? (
-        memoizedPosts.map((post) => (
-          <PostItem
-            key={post.id}
-            post={post}
-            isRead={readPosts.has(post.id)}
-            onClick={() => handlePostClick(post)}
-          />
-        ))
-      ) : (
-        <div className="w-full flex items-center justify-center">
-          <p className="hover:text-red-200 text-blue-400 mx-auto">No posts</p>
-        </div>
-      )}
+      {memoizedPosts.map((post) => (
+        <PostItem
+          key={post.id}
+          post={post}
+          isRead={readPosts[post.id] || false}
+          onClick={() => handlePostClick(post)}
+        />
+      ))}
 
-      {loading && <p>Loading...</p>}
       <div className="flex justify-between items-center mt-4 lg:w-[948px] mx-auto">
         <Button onClick={() => handlePageChange(Math.max(page - 1, 1))} disabled={page === 1}>
           Previous Page
