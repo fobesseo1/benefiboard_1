@@ -1,7 +1,7 @@
 // app/post/_component/PagedPosts.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SlBubble, SlEye, SlHeart } from 'react-icons/sl';
@@ -53,41 +53,46 @@ export default function PagedPosts({
     setPage(currentPage);
   }, [initialPosts, currentPage]);
 
-  const fetchPosts = async (newPage: number) => {
-    setLoading(true);
-    try {
-      let newPosts;
-      if (searchTerm) {
-        newPosts = await fetchSearchPosts(searchTerm, newPage);
-      } else if (isBestPosts) {
-        // Implement fetchBestPosts function similar to fetchMorePosts
-        newPosts = await fetchMorePosts(newPage, categoryId);
-      } else {
-        newPosts = await fetchMorePosts(newPage, categoryId);
+  useEffect(() => {
+    posts.forEach((post) => {
+      router.prefetch(`/post/detail/${post.id}`);
+    });
+  }, [posts, router]);
+
+  const fetchPosts = useCallback(
+    async (newPage: number) => {
+      setLoading(true);
+      try {
+        let newPosts;
+        if (searchTerm) {
+          newPosts = await fetchSearchPosts(searchTerm, newPage);
+        } else if (isBestPosts) {
+          newPosts = await fetchMorePosts(newPage, categoryId);
+        } else {
+          newPosts = await fetchMorePosts(newPage, categoryId);
+        }
+        setPosts(newPosts);
+        setPage(newPage);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        setLoading(false);
       }
-      setPosts(newPosts);
-      setPage(newPage);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      setLoading(false);
-    }
-  };
+    },
+    [searchTerm, isBestPosts, categoryId]
+  );
 
-  const handlePageChange = (newPage: number) => {
-    fetchPosts(newPage);
-    router.push(`?page=${newPage}${searchTerm ? `&query=${searchTerm}` : ''}`, { scroll: false });
-  };
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      fetchPosts(newPage);
+      router.push(`?page=${newPage}${searchTerm ? `&query=${searchTerm}` : ''}`, { scroll: false });
+    },
+    [fetchPosts, router, searchTerm]
+  );
 
-  const prefetchPostDetail = async (postId: string) => {
-    const targetUrl = `/post/detail/${postId}`;
-    router.prefetch(targetUrl);
-  };
-
-  const handlePostClick = async (postId: string) => {
-    console.log('postId click', postId);
-    const post = posts.find((p) => p.id === postId);
-    if (post) {
+  const handlePostClick = useCallback(
+    async (post: PostType) => {
+      console.log('post click', post.id);
       try {
         const result = await addWritingPoints(post.author_id, 5);
         if (result) {
@@ -115,23 +120,29 @@ export default function PagedPosts({
       } catch (error) {
         console.error('Error adding points:', error);
       }
-    }
 
-    const readPostsKey = `readPosts_${userId}`;
-    const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
+      const readPostsKey = `readPosts_${userId}`;
+      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
+      const updatedReadPosts = Array.from(new Set([...storedReadPosts, post.id]));
+      setReadPosts(updatedReadPosts);
+      localStorage.setItem(readPostsKey, JSON.stringify(updatedReadPosts));
 
-    const updatedReadPosts = Array.from(new Set([...storedReadPosts, postId]));
+      const detailUrl = `/post/detail/${post.id}`;
+      router.push(detailUrl);
+    },
+    [currentUser, userId, router]
+  );
 
-    setReadPosts(updatedReadPosts);
-    localStorage.setItem(readPostsKey, JSON.stringify(updatedReadPosts));
+  const isPostRead = useCallback(
+    (postId: string) => {
+      return readPosts.includes(postId);
+    },
+    [readPosts]
+  );
 
-    const detailUrl = `/post/detail/${postId}`;
-    router.push(detailUrl);
-  };
-
-  const isPostRead = (postId: string) => {
-    return readPosts.includes(postId);
-  };
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault(); // 기본 터치 동작 방지
+  }, []);
 
   return (
     <div>
@@ -140,7 +151,8 @@ export default function PagedPosts({
           <div key={post.id}>
             <div
               className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 lg:hidden"
-              onClick={() => prefetchPostDetail(post.id)}
+              onClick={() => handlePostClick(post)}
+              onTouchStart={handleTouchStart}
             >
               <div className="flex justify-between items-center">
                 <div className="categoryCreatorComments flex gap-2 flex-1 overflow-hidden items-center">
@@ -157,10 +169,7 @@ export default function PagedPosts({
                   {listformatDate(post.created_at) || 'No time'}
                 </p>
               </div>
-              <div
-                className="flex-1 pt-2 pb-2 cursor-pointer"
-                onClick={() => handlePostClick(post.id)}
-              >
+              <div className="flex-1 pt-2 pb-2">
                 <p
                   className={`font-semibold line-clamp-1 leading-tight tracking-tighter ${
                     isPostRead(post.id) ? 'text-gray-400' : ''
@@ -203,7 +212,8 @@ export default function PagedPosts({
 
             <div
               className="hidden lg:flex w-[948px] mx-auto gap-4 items-center justify-between py-2 bg-white border-b-[1px] border-gray-200"
-              onClick={() => handlePostClick(post.id)}
+              onClick={() => handlePostClick(post)}
+              onTouchStart={handleTouchStart}
             >
               <div className="flex items-center w-[160px]">
                 <div className="flex">
