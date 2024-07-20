@@ -1,9 +1,20 @@
 // app/repost/search/best/page.tsx
+
+import { cache } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
 import SearchBar from '@/app/post/_component/SearchBar';
 import RepostSearchList from '../../_component/RepostSearchList';
 import { CurrentUserType, RepostType } from '@/types/types';
 import { fetchLatestBestBatches } from '../../best/utils';
+
+const fetchCachedBestSearchSuggestions = cache(async () => {
+  const { success, data: repostData } = await fetchLatestBestBatches();
+  if (!success || !Array.isArray(repostData)) {
+    console.error('Failed to fetch best search suggestions');
+    return [];
+  }
+  return Array.from(new Set(repostData.map((post) => post.title)));
+});
 
 export default async function BestRepostSearchPage({
   searchParams,
@@ -13,10 +24,7 @@ export default async function BestRepostSearchPage({
   const currentUser: CurrentUserType | null = await getCurrentUser();
   const query = searchParams.query || '';
 
-  // 검색 제안을 위한 데이터 가져오기
-  const { success, data: repostData } = await fetchLatestBestBatches();
-  const suggestions: RepostType[] = success && Array.isArray(repostData) ? repostData : [];
-  const titleSuggestions = Array.from(new Set(suggestions.map((post) => post.title)));
+  const titleSuggestions = await fetchCachedBestSearchSuggestions();
 
   return (
     <div className="pt-4">
