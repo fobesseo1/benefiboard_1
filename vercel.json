@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/scrape": {
+      "schedule": "25 * * * *"
+    },
+    "api/scrapeBest": {
+      "schedule": "55 * * * *"
+    }
+  }
+}

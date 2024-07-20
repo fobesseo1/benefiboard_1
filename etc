@@ -1,0 +1,506 @@
+-- Create a table for public userdata
+create table userdata (
+  id uuid references auth.users on delete cascade not null primary key,
+  updated_at timestamp with time zone,
+  username text unique,
+  email text,
+  avatar_url text,
+  website text,
+
+  constraint username_length check (char_length(username) >= 3)
+);
+
+-- Set up Row Level Security (RLS)
+-- See https://supabase.com/docs/guides/auth/row-level-security for more details.
+alter table userdata
+  enable row level security;
+
+create policy "Public userdata are viewable by everyone." on userdata
+  for select using (true);
+
+create policy "Users can insert their own profile." on userdata
+  for insert with check ((select auth.uid()) = id);
+
+create policy "Users can update own profile." on userdata
+  for update using ((select auth.uid()) = id);
+
+-- This trigger automatically creates a userdata entry when a new user signs up via Supabase Auth.
+-- See https://supabase.com/docs/guides/auth/managing-user-data#using-triggers for more details.
+create function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.userdata (id, username, avatar_url, email)
+  values (new.id, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'avatar_url', new.email);
+  return new;
+end;
+$$ language plpgsql security definer;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- Set up Storage!
+insert into storage.buckets (id, name)
+  values ('avatars', 'avatars');
+
+-- Set up access controls for storage.
+-- See https://supabase.com/docs/guides/storage#policy-examples for more details.
+create policy "Avatar images are publicly accessible." on storage.objects
+  for select using (bucket_id = 'avatars');
+
+create policy "Anyone can upload an avatar." on storage.objects
+  for insert with check (bucket_id = 'avatars');
+
+
+  ///////////////////////////////
+
+
+  'use client';
+
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { BiDotsVerticalRounded, BiRewind } from 'react-icons/bi';
+import { deletePostById, fetchPostById } from '../../_action/post';
+import createSupabaseServerClient from '@/lib/supabse/server';
+import createSupabaseBrowserClient from '@/lib/supabse/client';
+
+export default function PostDetailPage() {
+  const { id } = useParams() as { id: string };
+  const [post, setPost] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [user_id, setuser_id] = useState<string | null>(null);
+  const supabase = createSupabaseBrowserClient();
+
+  /* 포인트 보여주기 애니메이션 */
+  const [randomNumber, setRandomNumber] = useState<number | null>(null);
+  const [showNumber, setShowNumber] = useState(false);
+  const [bonusNumber, setBonusNumber] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const data = await fetchPostById(id);
+        setPost(data);
+        console.log('dataDDEETTAAIILL', data);
+      } catch (error: any) {
+        setError(error.message);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchuser_id = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error.message);
+        return;
+      }
+      setuser_id(data?.user?.id || null);
+      console.log('user_id', data?.user?.id);
+    };
+
+    fetchuser_id();
+  }, [supabase]);
+
+  useEffect(() => {
+    const number = Math.floor(Math.random() * 9) + 1; // 1~9의 숫자 생성
+    setRandomNumber(number);
+
+    const timer = setTimeout(() => {
+      setRandomNumber(null);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+
+    //한번 방문하면 다시 나오지 않음 게시물별로 체크하는 기능 개발 필요!!!
+    /* const hasVisited = sessionStorage.getItem('hasVisited');
+    if (!hasVisited) {
+      const number = Math.floor(Math.random() * 9) + 1; // 1~9의 숫자 생성
+      setRandomNumber(number);
+
+      const timer = setTimeout(() => {
+        setRandomNumber(null);
+        sessionStorage.setItem('hasVisited', 'true');
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    } */
+  }, []);
+
+  useEffect(() => {
+    if (showNumber) {
+      const number = Math.floor(Math.random() * 900) + 100; // 100~999의 숫자 생성
+      setBonusNumber(number);
+
+      const timer = setTimeout(() => {
+        setBonusNumber(null);
+        window.location.href = 'https://www.google.com'; // 구글 사이트로 이동
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showNumber]);
+
+  const handleButtonClick = () => {
+    setShowNumber(true);
+  };
+
+  const handleDeleteClick = async () => {
+    const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
+    if (confirmDelete && user_id === post?.authorId) {
+      try {
+        await deletePostById(id);
+        alert('게시물이 성공적으로 삭제되었습니다.');
+        // 삭제 후 원하는 페이지로 리다이렉트
+        window.location.href = '/post';
+      } catch (error) {
+        console.error('게시물 삭제 중 오류 발생:', error);
+        alert('게시물 삭제 중 오류가 발생했습니다.');
+      }
+    } else if (user_id !== post?.authorId) {
+      alert('이 게시물을 삭제할 권한이 없습니다.');
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-height-minus-146 gap-6">
+        <p className="text-xl font-semibold">{error}</p>
+        <Link href="/post">
+          <Button>
+            <div className="flex items-center gap-1">
+              <BiRewind color="white" size={28} />
+              리스트로 돌아가기
+            </div>
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return <p>Loading...</p>;
+  }
+
+  return (
+    <>
+      <div className="mx-4 ">
+        {/* breadcrumbs */}
+        <div className="flex gap-1 items-center h-9 border-b-[1px] border-gray-200 bg-white">
+          <p className="leading-tight text-sm text-gray-600">포럼 {'>'}</p>
+          <p className="leading-tight text-sm font-bold text-gray-600">
+            {post?.category || '자유게시판'}
+          </p>
+        </div>
+        {/* title&auth */}
+        <div className="flex flex-col justify-center gap-4 p-4 border-b-[1px] border-gray-200">
+          <p className="font-bold line-clamp-2 leading-tight tracking-tighter">{post.title}</p>
+          <div className="flex items-center">
+            <img
+              src="/money-3d-main.png"
+              alt=""
+              className="w-8 h-8 ring-1 rounded-full object-cover"
+            />
+            <div className="flex-1 h-10 ml-2 bg-white flex flex-col pt-1">
+              <p className="text-sm text-gray-600 font-bold leading-tight tracking-tighter line-clamp-1">
+                {post?.author || '포브스사랑'}
+              </p>
+              <div className="flex gap-2">
+                <p className="text-gray-600 text-xs font-semibold">조회수 {post?.views || 300}</p>
+                <p className="text-gray-600 text-xs font-semibold">댓글 {post?.comments || 300}</p>
+                <p className="text-gray-600 text-xs font-light">17:45:46</p>
+              </div>
+            </div>
+            <BiDotsVerticalRounded size={24} />
+          </div>
+        </div>
+
+        {/* 본문 */}
+        <section className="flex flex-col my-8 gap-8">
+          <img src="/mainad-1.png" alt="" className="w-full aspect-square object-cover" />
+          <p className="leading-normal ">{post?.content}</p>
+          <p>{post?.authorId}</p>
+        </section>
+
+        {/* 수정버튼 삭제버튼 */}
+        {user_id === post?.authorId && (
+          <div className="grid grid-cols-2 items-center gap-2 w-full h-12  ">
+            <Button variant="outline" asChild>
+              <Link href={`/post/edit/${id}`}>수정하기</Link>
+            </Button>
+            <Button variant="outline" onClick={handleDeleteClick}>
+              삭제하기
+            </Button>
+          </div>
+        )}
+        {/* 좋아요 싫어요 */}
+        {/* 댓글 */}
+      </div>
+
+      {/* 광고 */}
+      <div className="my-16 flex flex-col gap-2 border-y-[1px] border-gray-200 py-4">
+        <p className="text-gray-600 text-right mr-4">ad</p>
+        <img src="/ad-nike1.jpg" alt="" className="w-full aspect-video object-cover " />
+        <Button className="mx-8" onClick={handleButtonClick}>
+          확인하고 포인트 받기
+        </Button>
+      </div>
+
+      {/* 포인트 애니메이션 */}
+      {randomNumber !== null && (
+        <div className="fixed flex flex-col gap-4 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-move-up">
+          <div className="flex flex-col items-center justify-center gap-4 bg-red-600 rounded-full p-4 w-52 h-52 aspect-square">
+            <p className="text-6xl font-bold text-white">{randomNumber}</p>
+            <p className="text-2xl text-white">포인트 적립</p>
+          </div>
+        </div>
+      )}
+
+      {/* 보너스 포인트 애니메이션 */}
+      {bonusNumber !== null && (
+        <div className="fixed flex flex-col gap-4 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-move-up">
+          <div className="flex flex-col items-center justify-center gap-4 bg-blue-600 rounded-full p-4 w-52 h-52 aspect-square">
+            <p className="text-6xl font-bold text-white">{bonusNumber}</p>
+            <p className="text-2xl text-white">보너스 포인트</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+'use client';
+
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { BiDotsVerticalRounded, BiRewind } from 'react-icons/bi';
+import { fetchPostById, deletePostById } from '../../_action/post';
+import createSupabaseBrowserClient from '@/lib/supabse/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+
+export default function PostDetailPage() {
+  const { id } = useParams() as { id: string };
+  const router = useRouter();
+  const [post, setPost] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [user_id, setuser_id] = useState<string | null>(null);
+  const supabase = createSupabaseBrowserClient();
+
+  /* 포인트 보여주기 애니메이션 */
+  const [randomNumber, setRandomNumber] = useState<number | null>(null);
+  const [showNumber, setShowNumber] = useState(false);
+  const [bonusNumber, setBonusNumber] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const data = await fetchPostById(id);
+        setPost(data);
+        console.log('dataDDEETTAAIILL', data);
+      } catch (error: any) {
+        setError(error.message);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchuser_id = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error.message);
+        return;
+      }
+      setuser_id(data?.user?.id || null);
+      console.log('user_id', data?.user?.id);
+    };
+
+    fetchuser_id();
+  }, [supabase]);
+
+  useEffect(() => {
+    const number = Math.floor(Math.random() * 9) + 1; // 1~9의 숫자 생성
+    setRandomNumber(number);
+
+    const timer = setTimeout(() => {
+      setRandomNumber(null);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (showNumber) {
+      const number = Math.floor(Math.random() * 900) + 100; // 100~999의 숫자 생성
+      setBonusNumber(number);
+
+      const timer = setTimeout(() => {
+        setBonusNumber(null);
+        window.location.href = 'https://www.google.com'; // 구글 사이트로 이동
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showNumber]);
+
+  const handleButtonClick = () => {
+    setShowNumber(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (user_id === post?.authorId) {
+      try {
+        await deletePostById(id);
+        alert('게시물이 성공적으로 삭제되었습니다.');
+        // 삭제 후 원하는 페이지로 리다이렉트
+        router.push('/post');
+      } catch (error) {
+        console.error('게시물 삭제 중 오류 발생:', error);
+        alert('게시물 삭제 중 오류가 발생했습니다.');
+      }
+    } else {
+      alert('이 게시물을 삭제할 권한이 없습니다.');
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-height-minus-146 gap-6">
+        <p className="text-xl font-semibold">{error}</p>
+        <Link href="/post">
+          <Button>
+            <div className="flex items-center gap-1">
+              <BiRewind color="white" size={28} />
+              리스트로 돌아가기
+            </div>
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return <p>Loading...</p>;
+  }
+
+  return (
+    <>
+      <div className="mx-4">
+        {/* breadcrumbs */}
+        <div className="flex gap-1 items-center h-9 border-b-[1px] border-gray-200 bg-white">
+          <p className="leading-tight text-sm text-gray-600">포럼 {'>'}</p>
+          <p className="leading-tight text-sm font-bold text-gray-600">
+            {post?.category || '자유게시판'}
+          </p>
+        </div>
+        {/* title&auth */}
+        <div className="flex flex-col justify-center gap-4 p-4 border-b-[1px] border-gray-200">
+          <p className="font-bold line-clamp-2 leading-tight tracking-tighter">{post.title}</p>
+          <div className="flex items-center">
+            <img
+              src="/money-3d-main.png"
+              alt=""
+              className="w-8 h-8 ring-1 rounded-full object-cover"
+            />
+            <div className="flex-1 h-10 ml-2 bg-white flex flex-col pt-1">
+              <p className="text-sm text-gray-600 font-bold leading-tight tracking-tighter line-clamp-1">
+                {post?.author || '포브스사랑'}
+              </p>
+              <div className="flex gap-2">
+                <p className="text-gray-600 text-xs font-semibold">조회수 {post?.views || 300}</p>
+                <p className="text-gray-600 text-xs font-semibold">댓글 {post?.comments || 300}</p>
+                <p className="text-gray-600 text-xs font-light">17:45:46</p>
+              </div>
+            </div>
+            <BiDotsVerticalRounded size={24} />
+          </div>
+        </div>
+
+        {/* 본문 */}
+        <section className="flex flex-col my-8 gap-8">
+          <img src="/mainad-1.png" alt="" className="w-full aspect-square object-cover" />
+          <p className="leading-normal ">{post?.content}</p>
+          <p>{post?.authorId}</p>
+        </section>
+
+        {/* 수정버튼 삭제버튼 */}
+        {user_id === post?.authorId && (
+          <div className="grid grid-cols-2 items-center gap-2 w-full h-12">
+            <Button variant="outline" asChild>
+              <Link href={`/post/edit/${id}`}>수정하기</Link>
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">삭제하기</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>게시물 삭제</DialogTitle>
+                  <DialogDescription>정말로 이 게시물을 삭제하시겠습니까?</DialogDescription>
+                </DialogHeader>
+                <div className="mt-4 flex justify-end space-x-2">
+                  <DialogTrigger asChild>
+                    <Button variant="outline">취소</Button>
+                  </DialogTrigger>
+                  <Button variant="destructive" onClick={handleDeleteConfirm}>
+                    삭제
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+        {/* 좋아요 싫어요 */}
+        {/* 댓글 */}
+      </div>
+
+      {/* 광고 */}
+      <div className="my-16 flex flex-col gap-2 border-y-[1px] border-gray-200 py-4">
+        <p className="text-gray-600 text-right mr-4">ad</p>
+        <img src="/ad-nike1.jpg" alt="" className="w-full aspect-video object-cover " />
+        <Button className="mx-8" onClick={handleButtonClick}>
+          확인하고 포인트 받기
+        </Button>
+      </div>
+
+      {/* 포인트 애니메이션 */}
+      {randomNumber !== null && (
+        <div className="fixed flex flex-col gap-4 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-move-up">
+          <div className="flex flex-col items-center justify-center gap-4 bg-red-600 rounded-full p-4 w-52 h-52 aspect-square">
+            <p className="text-6xl font-bold text-white">{randomNumber}</p>
+            <p className="text-2xl text-white">포인트 적립</p>
+          </div>
+        </div>
+      )}
+
+      {/* 보너스 포인트 애니메이션 */}
+      {bonusNumber !== null && (
+        <div className="fixed flex flex-col gap-4 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-move-up">
+          <div className="flex flex-col items-center justify-center gap-4 bg-blue-600 rounded-full p-4 w-52 h-52 aspect-square">
+            <p className="text-6xl font-bold text-white">{bonusNumber}</p>
+            <p className="text-2xl text-white">보너스 포인트</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
