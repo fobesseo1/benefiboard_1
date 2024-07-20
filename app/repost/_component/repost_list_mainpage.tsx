@@ -3,13 +3,12 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { listformatDate } from '@/lib/utils/formDate';
 import RepostPopup from './RepostPopup';
-import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
-import classNames from 'classnames'; // classNames 라이브러리 임포트
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import classNames from 'classnames';
 import { addDonationPoints } from '@/app/post/_action/adPointSupabase';
 import { CurrentUserType, RepostType } from '@/types/types';
 
@@ -20,7 +19,6 @@ type RepostDataProps = {
   userId: string | null;
 };
 
-// 사이트와 색상 매핑 객체
 const siteColors: { [key: string]: string } = {
   웃대: 'red',
   펨코: 'orange',
@@ -45,17 +43,10 @@ export default function Repost_list_mainpage({
   linkPath,
   userId,
 }: RepostDataProps) {
-  const [posts, setPosts] = useState<RepostType[]>(initialPosts);
-  const [currentUserState, setCurrentUserState] = useState<CurrentUserType | null>(currentUser);
-  const [readPosts, setReadPosts] = useState<string[]>([]);
+  const [posts] = useState<RepostType[]>(initialPosts);
+  const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    setPosts(initialPosts);
-    setCurrentUserState(currentUser);
-  }, [initialPosts, currentUser]);
 
   useEffect(() => {
     const clearLocalStorageDaily = () => {
@@ -73,75 +64,65 @@ export default function Repost_list_mainpage({
     };
 
     clearLocalStorageDaily();
-  }, [userId]);
 
-  useEffect(() => {
     if (userId) {
       const readPostsKey = `readPosts_${userId}`;
       const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
-      setReadPosts(storedReadPosts);
+      setReadPosts(
+        storedReadPosts.reduce((acc: Record<string, boolean>, postId: string) => {
+          acc[postId] = true;
+          return acc;
+        }, {})
+      );
     }
   }, [userId]);
 
-  const handlePostClick = async (post: RepostType) => {
-    if (userId) {
-      const readPostsKey = `readPosts_${userId}`;
-      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
-      const updatedReadPosts = Array.from(new Set([...storedReadPosts, post.id.toString()]));
-      setReadPosts(updatedReadPosts);
-      localStorage.setItem(readPostsKey, JSON.stringify(updatedReadPosts));
+  const handlePostClick = useCallback(
+    async (post: RepostType) => {
+      if (userId) {
+        setReadPosts((prev) => ({ ...prev, [post.id]: true }));
+        const readPostsKey = `readPosts_${userId}`;
+        const updatedReadPosts = { ...readPosts, [post.id]: true };
+        localStorage.setItem(readPostsKey, JSON.stringify(Object.keys(updatedReadPosts)));
 
-      if (currentUser && currentUser.donation_id) {
-        try {
-          const donationResult = await addDonationPoints(
-            currentUser.id,
-            currentUser.donation_id,
-            5
-          );
-          if (donationResult) {
-            console.log(
-              `Added 5 donation points from ${currentUser.id} to ${currentUser.donation_id}`
-            );
-          } else {
-            console.error(
-              `Failed to add donation points from ${currentUser.id} to ${currentUser.donation_id}`
-            );
-          }
-        } catch (error) {
-          console.error('Error adding donation points:', error);
+        if (currentUser?.donation_id) {
+          addDonationPoints(currentUser.id, currentUser.donation_id, 5)
+            .then(() =>
+              console.log(
+                `Added 5 donation points from ${currentUser.id} to ${currentUser.donation_id}`
+              )
+            )
+            .catch((error) => console.error('Error adding donation points:', error));
         }
       }
-    }
 
-    setSelectedPost(post);
-    setShowPopup(true);
-  };
+      setSelectedPost(post);
+      setShowPopup(true);
+    },
+    [userId, currentUser, readPosts]
+  );
 
-  const isPostRead = (postId: string) => {
-    return readPosts.includes(postId);
-  };
-
-  const closePopup = () => {
+  const closePopup = useCallback(() => {
     setShowPopup(false);
     setSelectedPost(null);
-  };
+  }, []);
 
-  const getBadgeColor = (site: string) => {
-    return siteColors[site] || 'gray'; // 사이트에 해당하는 색상을 찾거나 기본 색상인 gray를 반환
-  };
+  const getBadgeColor = useCallback((site: string) => {
+    return siteColors[site] || 'gray';
+  }, []);
 
   return (
-    <div className="relative mb-4 ">
+    <div className="relative mb-4">
       <Link href={linkPath}>
         <div className="absolute w-24 h-12 -bottom-8 lg:-bottom-8 left-1/2 transform -translate-x-1/2 bg-red-600 flex items-center justify-center gap-1 rounded-full shadow-md">
           <p className="text-lg font-semibold text-white">+</p>
-          <p className=" font-semibold text-white">더보기</p>
+          <p className="font-semibold text-white">더보기</p>
         </div>
       </Link>
       {posts.length ? (
         posts.map((post) => (
           <div key={post.id}>
-            <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200  mx-auto ">
+            <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto">
               <div className="flex justify-between items-center">
                 <div className="categoryCreatorComments flex gap-2 flex-1 overflow-hidden items-center">
                   <div className="flex items-center">
@@ -160,7 +141,7 @@ export default function Repost_list_mainpage({
               >
                 <p
                   className={`font-semibold line-clamp-1 leading-tight tracking-tighter ${
-                    isPostRead(post.id.toString()) ? 'text-gray-400' : ''
+                    readPosts[post.id] ? 'text-gray-400' : ''
                   }`}
                 >
                   {post.title}
@@ -173,7 +154,7 @@ export default function Repost_list_mainpage({
         <p className="hover:text-red-200 text-blue-400">No posts</p>
       )}
       {showPopup && selectedPost && (
-        <RepostPopup post={selectedPost} currentUser={currentUserState} onClose={closePopup} />
+        <RepostPopup post={selectedPost} currentUser={currentUser} onClose={closePopup} />
       )}
     </div>
   );
