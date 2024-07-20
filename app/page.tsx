@@ -1,21 +1,20 @@
 // app/page.tsx
 
 import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import { getCurrentUser } from '@/lib/cookies';
-import { fetchPosts, fetchBestReposts, fetchBasicReposts } from './actions/mainPageActions';
+import {
+  fetchCachedBasicReposts,
+  fetchCachedBestReposts,
+  fetchPosts,
+} from './actions/mainPageActions';
 import SkeletonLoader from './_components/SkeletonLoader';
 import OnboardingLogicWrapper from './_components/OnboardingLogicWrapper';
+import RepostSection from './_components/RepostSection';
+import PostsSection from './_components/PostsSection';
 import { CurrentUserType } from '@/types/types';
 
-const TodayNoticePopup = dynamic(() => import('./_components/TodayNoticePopup'), { ssr: false });
-const RepostSection = dynamic(() => import('./_components/RepostSection'));
-const PostsSection = dynamic(() => import('./_components/PostsSection'));
-
-export const revalidate = 600; // 10분 (전체 페이지에 대한 기본 revalidate 시간)
-
 async function BestRepostsSectionWrapper({ currentUser }: { currentUser: CurrentUserType | null }) {
-  const bestReposts = await fetchBestReposts();
+  const bestReposts = await fetchCachedBestReposts();
   return (
     <RepostSection
       title="인기 커뮤니티 오늘의 베스트 10"
@@ -31,7 +30,7 @@ async function BasicRepostsSectionWrapper({
 }: {
   currentUser: CurrentUserType | null;
 }) {
-  const basicReposts = await fetchBasicReposts();
+  const basicReposts = await fetchCachedBasicReposts();
   return (
     <RepostSection
       title="인기 커뮤니티 실시간 베스트 10"
@@ -52,7 +51,6 @@ export default async function Home() {
 
   return (
     <OnboardingLogicWrapper currentUser={currentUser}>
-      <TodayNoticePopup />
       <Suspense fallback={<SkeletonLoader />}>
         <BestRepostsSectionWrapper currentUser={currentUser} />
       </Suspense>

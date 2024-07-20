@@ -2,15 +2,21 @@
 
 import { cache } from 'react';
 import createSupabaseServerClient from '@/lib/supabse/server';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
-import { fetchTop10Batches, fetchTop10BestBatches } from '../repost/_actions/fetchRepostData';
 import { PostType, RepostType } from '@/types/types';
 import { findCategoryNameById } from '../post/_action/category';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+function getNextUpdateTime(interval: number) {
+  const now = dayjs().tz('Asia/Seoul');
+  const hour = now.hour();
+  const nextUpdateHour = Math.ceil(hour / interval) * interval;
+  return now.hour(nextUpdateHour).minute(10).second(0);
+}
 
 export const fetchPosts = cache(async (): Promise<PostType[]> => {
   const supabase = await createSupabaseServerClient();
@@ -39,19 +45,111 @@ export const fetchPosts = cache(async (): Promise<PostType[]> => {
 });
 
 export const fetchBestReposts = cache(async (): Promise<RepostType[]> => {
-  const { success, data } = await fetchTop10BestBatches();
-  if (success && data) {
-    return data;
+  const supabase = await createSupabaseServerClient();
+
+  const { data: latestBatches, error: batchError } = await supabase
+    .from('repost_best_data')
+    .select('batch')
+    .order('batch', { ascending: false })
+    .limit(1);
+
+  if (batchError) {
+    console.error('Error fetching latest batches:', batchError);
+    return [];
   }
-  console.error('Error fetching best reposts');
-  return [];
+
+  if (latestBatches.length === 0) {
+    return [];
+  }
+
+  const batch = latestBatches[0].batch;
+
+  const { data: posts, error: postsError } = await supabase
+    .from('repost_best_data')
+    .select('*')
+    .eq('batch', batch)
+    .order('order', { ascending: true })
+    .limit(10);
+
+  if (postsError) {
+    console.error('Error fetching posts:', postsError);
+    return [];
+  }
+
+  return posts;
 });
 
 export const fetchBasicReposts = cache(async (): Promise<RepostType[]> => {
-  const { success, data } = await fetchTop10Batches();
-  if (success && data) {
-    return data;
+  const supabase = await createSupabaseServerClient();
+
+  const { data: latestBatches, error: batchError } = await supabase
+    .from('repost_data')
+    .select('batch')
+    .order('batch', { ascending: false })
+    .limit(1);
+
+  if (batchError) {
+    console.error('Error fetching latest batches:', batchError);
+    return [];
   }
-  console.error('Error fetching basic reposts');
-  return [];
+
+  if (latestBatches.length === 0) {
+    return [];
+  }
+
+  const batch = latestBatches[0].batch;
+
+  const { data: posts, error: postsError } = await supabase
+    .from('repost_data')
+    .select('*')
+    .eq('batch', batch)
+    .order('order', { ascending: true })
+    .limit(10);
+
+  if (postsError) {
+    console.error('Error fetching posts:', postsError);
+    return [];
+  }
+
+  return posts;
+});
+
+export const fetchCachedBestReposts = cache(async (): Promise<RepostType[]> => {
+  if (typeof window !== 'undefined') {
+    const cachedData = localStorage.getItem('bestReposts');
+    const nextUpdateTime = localStorage.getItem('bestRepostsNextUpdate');
+    if (cachedData && nextUpdateTime) {
+      const now = dayjs().tz('Asia/Seoul');
+      if (now.isBefore(dayjs(nextUpdateTime))) {
+        return JSON.parse(cachedData);
+      }
+    }
+  }
+  const data = await fetchBestReposts();
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('bestReposts', JSON.stringify(data));
+    const nextUpdate = getNextUpdateTime(24).format(); // 24시간 간격
+    localStorage.setItem('bestRepostsNextUpdate', nextUpdate);
+  }
+  return data;
+});
+
+export const fetchCachedBasicReposts = cache(async (): Promise<RepostType[]> => {
+  if (typeof window !== 'undefined') {
+    const cachedData = localStorage.getItem('basicReposts');
+    const nextUpdateTime = localStorage.getItem('basicRepostsNextUpdate');
+    if (cachedData && nextUpdateTime) {
+      const now = dayjs().tz('Asia/Seoul');
+      if (now.isBefore(dayjs(nextUpdateTime))) {
+        return JSON.parse(cachedData);
+      }
+    }
+  }
+  const data = await fetchBasicReposts();
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('basicReposts', JSON.stringify(data));
+    const nextUpdate = getNextUpdateTime(3).format(); // 3시간 간격
+    localStorage.setItem('basicRepostsNextUpdate', nextUpdate);
+  }
+  return data;
 });
