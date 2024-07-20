@@ -20,7 +20,7 @@ async function BestRepostsSectionWrapper({ currentUser }: { currentUser: Current
     <RepostSection
       title="인기 커뮤니티 오늘의 베스트 10"
       posts={bestReposts}
-      linkPath="/repost/best"
+      linkpath="/repost/best"
       currentUser={currentUser}
     />
   );
@@ -36,7 +36,7 @@ async function BasicRepostsSectionWrapper({
     <RepostSection
       title="인기 커뮤니티 실시간 베스트 10"
       posts={basicReposts}
-      linkPath="/repost"
+      linkpath="/repost"
       currentUser={currentUser}
     />
   );

@@ -1,4 +1,4 @@
-//app>repost>_components>repost_list.tsx
+//app>repost>_components>repost_list_mainpage.tsx
 
 'use client';
 
