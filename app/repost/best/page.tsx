@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/cookies';
 import SearchBar from '@/app/post/_component/SearchBar';
 import Repost_list from '../_component/repost_list';
 import { CurrentUserType } from '@/types/types';
-import { fetchLatestBestBatches } from '../_actions/fetchRepostData';
+import { fetchLatestBestBatches } from './utils';
 
 const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12시간 캐시
 
