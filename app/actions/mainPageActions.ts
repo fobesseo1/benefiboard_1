@@ -34,13 +34,7 @@ export const fetchPosts = cache(async (): Promise<PostType[]> => {
 
   const { data: result, error } = await supabase
     .from('post')
-    .select(
-      `
-      *,
-      parent_category:parent_category_id(name),
-      child_category:child_category_id(name)
-    `
-    )
+    .select('*')
     .gt('created_at', twentyOneDaysAgo)
     .order('views', { ascending: false })
     .limit(10);
@@ -50,12 +44,14 @@ export const fetchPosts = cache(async (): Promise<PostType[]> => {
     return cachedPosts || [];
   }
 
-  const postsWithCategoryNames: PostType[] = result.map(
-    (post): PostType => ({
-      ...post,
-      parent_category_name: post.parent_category?.name || '',
-      child_category_name: post.child_category?.name || '',
-    })
+  const postsWithCategoryNames: PostType[] = await Promise.all(
+    result.map(
+      async (post): Promise<PostType> => ({
+        ...post,
+        parent_category_name: await findCategoryNameById(post.parent_category_id),
+        child_category_name: await findCategoryNameById(post.child_category_id),
+      })
+    )
   );
 
   cachedPosts = postsWithCategoryNames;
