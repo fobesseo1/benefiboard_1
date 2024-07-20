@@ -30,32 +30,25 @@ export const fetchPosts = cache(async (): Promise<PostType[]> => {
 
   const supabase = await createSupabaseServerClient();
   const nowDate = dayjs().tz('Asia/Seoul');
-  const sevenDayAgo = nowDate.subtract(21, 'day').format();
+  const twentyOneDaysAgo = nowDate.subtract(21, 'day').format();
 
   const { data: result, error } = await supabase
     .from('post')
-    .select('*')
-    .gt('created_at', sevenDayAgo)
+    .select('*, parent_category:parent_category_id(name), child_category:child_category_id(name)')
+    .gt('created_at', twentyOneDaysAgo)
     .order('views', { ascending: false })
     .limit(10);
 
   if (error) {
     console.error('Error fetching posts:', error);
-    return cachedPosts || []; // 에러 시 캐시된 데이터 반환 또는 빈 배열
+    return cachedPosts || [];
   }
 
-  const postsData = result || [];
-
-  const postsWithCategoryNames: PostType[] = await Promise.all(
-    postsData.map(async (post): Promise<PostType> => {
-      const parentCategoryName = await findCategoryNameById(post.parent_category_id);
-      const childCategoryName = await findCategoryNameById(post.child_category_id);
-
-      return {
-        ...post,
-        parent_category_name: parentCategoryName,
-        child_category_name: childCategoryName,
-      } as PostType;
+  const postsWithCategoryNames: PostType[] = result.map(
+    (post): PostType => ({
+      ...post,
+      parent_category_name: post.parent_category?.name,
+      child_category_name: post.child_category?.name,
     })
   );
 
