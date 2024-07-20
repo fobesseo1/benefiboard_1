@@ -155,8 +155,22 @@ export default function TopPosts({ posts, userId, currentUser }: TopPostsProps) 
     }
   }, [userId]);
 
+  const addPoints = useCallback(
+    (post: PostType) => {
+      Promise.all([
+        addWritingPoints(post.author_id, 5),
+        currentUser?.donation_id
+          ? addDonationPoints(currentUser.id, currentUser.donation_id, 5)
+          : Promise.resolve(),
+      ]).catch((error) => {
+        console.error('Error adding points:', error);
+      });
+    },
+    [currentUser]
+  );
+
   const handlePostClick = useCallback(
-    async (post: PostType) => {
+    (post: PostType) => {
       setReadPosts((prev) => ({ ...prev, [post.id]: true }));
 
       if (userId) {
@@ -167,19 +181,13 @@ export default function TopPosts({ posts, userId, currentUser }: TopPostsProps) 
         );
       }
 
-      // 포인트 적립 로직을 백그라운드에서 비동기적으로 실행
-      Promise.all([
-        addWritingPoints(post.author_id, 5),
-        currentUser?.donation_id
-          ? addDonationPoints(currentUser.id, currentUser.donation_id, 5)
-          : Promise.resolve(),
-      ]).catch((error) => {
-        console.error('Error adding points:', error);
-      });
-
+      // Navigate immediately
       router.push(`/post/detail/${post.id}`);
+
+      // Add points after navigation
+      setTimeout(() => addPoints(post), 0);
     },
-    [readPosts, userId, currentUser, router]
+    [readPosts, userId, router, addPoints]
   );
 
   const memoizedPosts = useMemo(() => posts, [posts]);
@@ -193,12 +201,13 @@ export default function TopPosts({ posts, userId, currentUser }: TopPostsProps) 
       </Link>
       {memoizedPosts.length ? (
         memoizedPosts.map((post) => (
-          <PostItem
-            key={post.id}
-            post={post}
-            isRead={readPosts[post.id] || false}
-            onClick={() => handlePostClick(post)}
-          />
+          <Link key={post.id} href={`/post/detail/${post.id}`} prefetch={true}>
+            <PostItem
+              post={post}
+              isRead={readPosts[post.id] || false}
+              onClick={() => handlePostClick(post)}
+            />
+          </Link>
         ))
       ) : (
         <p className="hover:text-red-200 text-blue-400">No posts</p>
