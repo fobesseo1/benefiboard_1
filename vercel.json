@@ -1,10 +1,12 @@
 {
-  "functions": {
-    "api/scrape": {
-      "schedule": "25 * * * *"
+  "crons": [
+    {
+      "path": "/api/scrape",
+      "schedule": "1 */3 * * *"
     },
-    "api/scrapeBest": {
-      "schedule": "55 * * * *"
+    {
+      "path": "/api/scrapeBest",
+      "schedule": "3 0 * * *"
     }
-  }
+  ]
 }
