@@ -1,4 +1,5 @@
 // app/post/_action/fetchTopPosts.ts
+
 import { cache } from 'react';
 import createSupabaseServerClient from '@/lib/supabse/server';
 import dayjs from 'dayjs';
@@ -20,7 +21,7 @@ export const fetchTopPosts = cache(
     const supabase = await createSupabaseServerClient();
 
     const now = dayjs().tz('Asia/Seoul');
-    const sevenDaysAgo = now.subtract(28, 'day').tz('Asia/Seoul').format();
+    const twentyEightDaysAgo = now.subtract(28, 'day').format();
 
     const { data, error, count } = await supabase
       .from('post')
@@ -28,7 +29,7 @@ export const fetchTopPosts = cache(
         'id, title, created_at, views, comments, author_id, author_name, author_email, author_avatar_url, parent_category_id, child_category_id, likes, dislikes',
         { count: 'exact' }
       )
-      .gt('created_at', sevenDaysAgo)
+      .gt('created_at', twentyEightDaysAgo)
       .order('views', { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
 
@@ -37,25 +38,30 @@ export const fetchTopPosts = cache(
       return { posts: [], totalCount: 0 };
     }
 
-    const postsWithCategoryNames = await Promise.all(
-      data.map(
-        async (post): Promise<PostType> => ({
-          ...post,
-          parent_category_name: await findCategoryNameById(post.parent_category_id),
-          child_category_name: await findCategoryNameById(post.child_category_id),
-        })
-      )
+    const categoryIds = new Set([
+      ...data.map((post) => post.parent_category_id),
+      ...data.map((post) => post.child_category_id),
+    ]);
+
+    const categoryNames = await Promise.all(
+      Array.from(categoryIds).map(async (id) => ({
+        id,
+        name: await findCategoryNameById(id),
+      }))
     );
+
+    const categoryNameMap = Object.fromEntries(
+      categoryNames.map((category) => [category.id, category.name])
+    );
+
+    const postsWithCategoryNames = data.map((post) => ({
+      ...post,
+      parent_category_name: categoryNameMap[post.parent_category_id],
+      child_category_name: categoryNameMap[post.child_category_id],
+    }));
 
     return { posts: postsWithCategoryNames, totalCount: count || 0 };
   }
 );
 
-export const fetchCachedTopPosts = cache(
-  async (
-    page: number = 1,
-    limit: number = 20
-  ): Promise<{ posts: PostType[]; totalCount: number }> => {
-    return await fetchTopPosts(page, limit);
-  }
-);
+export const fetchCachedTopPosts = cache(fetchTopPosts);
