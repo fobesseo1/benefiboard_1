@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SlBubble, SlEye, SlHeart } from 'react-icons/sl';
 import { listformatDate } from '@/lib/utils/formDate';
 import { CurrentUserType, PostType } from '../../types/types';
@@ -16,10 +17,8 @@ type TopPostsProps = {
 };
 
 const PostItem = React.memo(({ post, isRead }: { post: PostType; isRead: boolean }) => {
-  const profileUrl = `/profile/${post.author_id}`;
-
   return (
-    <>
+    <div className="w-full">
       {/* Mobile view */}
       <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 lg:hidden">
         <div className="flex justify-between items-center">
@@ -45,11 +44,11 @@ const PostItem = React.memo(({ post, isRead }: { post: PostType; isRead: boolean
           </p>
         </div>
         <div className="flex gap-4 items-center overflow-hidden">
-          <Link href={profileUrl} className="overflow-hidden flex-1">
+          <div className="overflow-hidden flex-1">
             <p className="text-xs font-semibold leading-tight tracking-tight text-gray-600 truncate">
               {post.author_name || post.author_email || 'unknown'}
             </p>
-          </Link>
+          </div>
           <div className="flex gap-1">
             <div className="flex items-center gap-[2px]">
               <SlHeart size={12} color="gray" />
@@ -94,11 +93,11 @@ const PostItem = React.memo(({ post, isRead }: { post: PostType; isRead: boolean
             {post.title}
           </p>
         </div>
-        <Link href={profileUrl} className="overflow-hidden w-[100px]">
+        <div className="overflow-hidden w-[100px]">
           <p className="text-sm leading-tight tracking-tight text-gray-600 truncate">
             {post.author_name || post.author_email || 'unknown'}
           </p>
-        </Link>
+        </div>
         <div className="flex gap-1 w-[120px]">
           <div className="flex items-center gap-[2px]">
             <SlHeart size={12} color="gray" />
@@ -123,13 +122,14 @@ const PostItem = React.memo(({ post, isRead }: { post: PostType; isRead: boolean
           {listformatDate(post.created_at) || 'No time'}
         </p>
       </div>
-    </>
+    </div>
   );
 });
 
 PostItem.displayName = 'PostItem';
 
 export default function TopPosts({ posts, userId, currentUser }: TopPostsProps) {
+  const router = useRouter();
   const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -166,8 +166,10 @@ export default function TopPosts({ posts, userId, currentUser }: TopPostsProps) 
       ]).catch((error) => {
         console.error('Error adding points:', error);
       });
+
+      router.push(`/post/detail/${post.id}`);
     },
-    [readPosts, userId, currentUser]
+    [readPosts, userId, currentUser, router]
   );
 
   const memoizedPosts = useMemo(() => posts, [posts]);
@@ -181,14 +183,9 @@ export default function TopPosts({ posts, userId, currentUser }: TopPostsProps) 
       </Link>
       {memoizedPosts.length ? (
         memoizedPosts.map((post) => (
-          <Link
-            key={post.id}
-            href={`/post/detail/${post.id}`}
-            prefetch={true}
-            onClick={() => handlePostClick(post)}
-          >
+          <div key={post.id} onClick={() => handlePostClick(post)}>
             <PostItem post={post} isRead={readPosts[post.id] || false} />
-          </Link>
+          </div>
         ))
       ) : (
         <p className="hover:text-red-200 text-blue-400">No posts</p>
