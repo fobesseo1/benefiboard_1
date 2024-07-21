@@ -3,7 +3,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { CurrentUserType, PostType } from '@/types/types';
-import PagedPosts from '../post/_component/PagedPosts';
+import PagedPosts from '../post/_component/PagedPosts_Router';
 
 interface PostsSectionProps {
   postsPromise: Promise<PostType[]>;

@@ -7,7 +7,7 @@ import { findCategoryNameById } from '../_action/category';
 import SearchBar from '../_component/SearchBar';
 import FixedIconGroup from '../_component/FixedIconGroup';
 import { CurrentUserType, PostType } from '@/types/types';
-import PagedPosts from '../_component/PagedPosts';
+import PagedPosts from '../_component/PagedPosts_Router';
 
 interface PageProps {
   params: { categoryId: string };

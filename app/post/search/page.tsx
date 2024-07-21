@@ -2,7 +2,7 @@
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
 import SearchBar from '../_component/SearchBar';
-import PagedPosts from '../_component/PagedPosts';
+import PagedPosts from '../_component/PagedPosts_Router';
 import FixedIconGroup from '../_component/FixedIconGroup';
 import { CurrentUserType, PostType } from '../../../types/types';
 import { getPostsData } from '../_action/postData';
