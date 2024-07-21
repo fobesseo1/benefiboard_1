@@ -35,7 +35,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Benefiboard',
   description: 'Your benefiboard application description',
-  manifest: '/manifest.json',
   icons: {
     icon: '/logo-square.svg',
   },
@@ -70,11 +69,6 @@ export default async function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-        />
         <link rel="icon" href="/logo-benefiboard.svg" />
       </head>
       <body
