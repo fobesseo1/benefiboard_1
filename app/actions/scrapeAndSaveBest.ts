@@ -1,4 +1,4 @@
-//app>actions>scrapeAndSave.ts
+//app>actions>scrapeAndSaveBest.ts
 
 import createSupabaseServerClient from '@/lib/supabse/server';
 import axios from 'axios';

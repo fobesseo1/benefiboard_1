@@ -1,20 +1,24 @@
-//app/datafetch/DataFetchClient.tsx
-
+// app/datafetch/DataFetchClient.tsx
 'use client';
 
 import { useState } from 'react';
+import { scrapeAndSave, scrapeAndSaveBest } from '../actions/scrapeActions';
 
 const DataFetchClient = () => {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<string>('');
 
-  const handleScrape = async (endpoint: string) => {
-    setMessage('');
+  const handleScrape = async (action: 'scrape' | 'scrapeBest') => {
+    setMessage('Scraping in progress...');
     try {
-      const response = await fetch(`/api/${endpoint}`);
-      const data = await response.json();
-      setMessage(data.message);
+      const result = action === 'scrape' ? await scrapeAndSave() : await scrapeAndSaveBest();
+
+      setMessage(
+        result.success
+          ? result.message || 'Operation completed successfully'
+          : `Error: ${result.error || 'An unknown error occurred'}`
+      );
     } catch (error) {
-      setMessage('Error occurred while scraping');
+      setMessage('An unexpected error occurred');
     }
   };
 
