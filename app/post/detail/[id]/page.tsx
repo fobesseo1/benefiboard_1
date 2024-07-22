@@ -65,12 +65,12 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           initialPost={post}
         />
       </Suspense>
-      {/* <AdPopupWrapper
+      <AdPopupWrapper
         currentUser={currentUser}
         postId={id}
         authorId={post?.author_id}
         donationPoints={0}
-      /> */}
+      />
     </div>
   );
 }
