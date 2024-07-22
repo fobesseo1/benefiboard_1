@@ -167,7 +167,7 @@ export default function PagedPosts({
       router.push(`/experiment`);
       /* router.push(`/post/detail/${post.id}`); */
 
-      // 비중요 작업을 transition으로 감싸기
+      /* // 비중요 작업을 transition으로 감싸기
       startTransition(() => {
         // 로컬 상태 업데이트
         setReadPosts((prev) => ({ ...prev, [post.id]: true }));
@@ -188,7 +188,7 @@ export default function PagedPosts({
         ]).catch((error) => {
           console.error('포인트 추가 중 오류 발생:', error);
         });
-      });
+      }); */
     },
     [readPosts, userId, currentUser, router]
   );
