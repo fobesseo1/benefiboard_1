@@ -168,7 +168,8 @@ export default function PagedPosts({
   const handlePostClick = useCallback(
     (post: PostType) => {
       // 즉시 페이지 이동
-      router.push(`/post/detail/${post.id}`);
+      /* router.push(`/post/detail/${post.id}`); */
+      router.push('/experiment');
 
       // 나머지 작업을 비동기적으로 수행
       setTimeout(() => {
