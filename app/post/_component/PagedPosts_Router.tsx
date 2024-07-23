@@ -170,29 +170,35 @@ export default function PagedPosts({
       // 즉시 페이지 이동
       router.push(`/post/detail/${post.id}`);
 
-      // 나머지 작업을 비동기적으로 수행
-      queueMicrotask(() => {
-        // 로컬 상태 업데이트
-        setReadPosts((prev) => ({ ...prev, [post.id]: true }));
-
-        // localStorage 업데이트
-        if (userId) {
-          const readPostsKey = `readPosts_${userId}`;
-          const updatedReadPosts = JSON.stringify(Object.keys({ ...readPosts, [post.id]: true }));
-          localStorage.setItem(readPostsKey, updatedReadPosts);
-        }
-
-        // Server Action 호출
+      // 포인트 추가 로직을 별도의 비동기 함수로 분리
+      const addPoints = async () => {
         if (currentUser) {
-          addPointsServerAction(
-            post.author_id,
-            currentUser.id,
-            currentUser.donation_id || undefined
-          ).catch((error) => console.error('Error calling addPoints Server Action:', error));
+          try {
+            await addPointsServerAction(
+              post.author_id,
+              currentUser.id,
+              currentUser.donation_id || undefined
+            );
+          } catch (error) {
+            console.error('Error adding points:', error);
+          }
         }
-      });
+      };
+
+      // 백그라운드에서 포인트 추가 실행
+      addPoints();
+
+      // 로컬 상태 업데이트
+      setReadPosts((prev) => ({ ...prev, [post.id]: true }));
+
+      // localStorage 업데이트
+      if (userId) {
+        const readPostsKey = `readPosts_${userId}`;
+        const updatedReadPosts = JSON.stringify(Object.keys({ ...readPosts, [post.id]: true }));
+        localStorage.setItem(readPostsKey, updatedReadPosts);
+      }
     },
-    [readPosts, userId, currentUser, router]
+    [currentUser, readPosts, userId, router]
   );
 
   const handlePageChange = useCallback(
