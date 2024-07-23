@@ -168,7 +168,14 @@ export default function PagedPosts({
   const handlePostClick = useCallback(
     (post: PostType) => {
       // 즉시 페이지 이동
+      const startTime = performance.now();
+      console.log('Click time:', startTime);
+
       router.push(`/post/detail/${post.id}`);
+
+      const endTime = performance.now();
+      console.log('After router.push time:', endTime);
+      console.log('Delay:', endTime - startTime, 'ms');
 
       // 포인트 추가 로직을 별도의 비동기 함수로 분리
       const addPoints = async () => {
