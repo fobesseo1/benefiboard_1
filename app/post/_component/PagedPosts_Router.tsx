@@ -167,37 +167,29 @@ export default function PagedPosts({
 
   const handlePostClick = useCallback(
     (post: PostType) => {
-      // 즉시 페이지 이동
-
+      // 즉시 페이지 이동 시작
       router.push(`/post/detail/${post.id}`);
-      /* router.push('/experiment'); */
 
-      /* // 포인트 추가 로직을 별도의 비동기 함수로 분리
-      const addPoints = async () => {
-        if (currentUser) {
-          try {
-            await addPointsServerAction(
-              post.author_id,
-              currentUser.id,
-              currentUser.donation_id || undefined
-            );
-          } catch (error) {
-            console.error('Error adding points:', error);
-          }
-        }
-      };
-
-      // 백그라운드에서 포인트 추가 실행
-      addPoints(); */
-
-      // 로컬 상태 업데이트
+      // 로컬 상태 및 localStorage 업데이트
       setReadPosts((prev) => ({ ...prev, [post.id]: true }));
-
-      // localStorage 업데이트
       if (userId) {
         const readPostsKey = `readPosts_${userId}`;
         const updatedReadPosts = JSON.stringify(Object.keys({ ...readPosts, [post.id]: true }));
         localStorage.setItem(readPostsKey, updatedReadPosts);
+      }
+
+      // 포인트 추가 로직을 백그라운드에서 실행
+      if (currentUser) {
+        // requestIdleCallback을 사용하여 브라우저가 idle 상태일 때 실행
+        requestIdleCallback(() => {
+          addPointsServerAction(
+            post.author_id,
+            currentUser.id,
+            currentUser.donation_id || undefined
+          ).catch((error) => {
+            console.error('Error adding points:', error);
+          });
+        });
       }
     },
     [currentUser, readPosts, userId, router]
