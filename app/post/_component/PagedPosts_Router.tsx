@@ -6,7 +6,11 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { SlBubble, SlEye, SlHeart } from 'react-icons/sl';
 import { listformatDate } from '@/lib/utils/formDate';
-import { addWritingPoints, addDonationPoints } from '../_action/adPointSupabase';
+import {
+  addWritingPoints,
+  addDonationPoints,
+  addPointsServerAction,
+} from '../_action/adPointSupabase';
 import { CurrentUserType, PostType } from '../../../types/types';
 import { Button } from '@/components/ui/button';
 
@@ -163,12 +167,11 @@ export default function PagedPosts({
 
   const handlePostClick = useCallback(
     (post: PostType) => {
-      // 즉시 페이지 이동 시작
-      /* router.push(`/experiment`); */
+      // 즉시 페이지 이동
       router.push(`/post/detail/${post.id}`);
 
-      /* // 비중요 작업을 transition으로 감싸기
-      startTransition(() => {
+      // 나머지 작업을 비동기적으로 수행
+      setTimeout(() => {
         // 로컬 상태 업데이트
         setReadPosts((prev) => ({ ...prev, [post.id]: true }));
 
@@ -179,16 +182,21 @@ export default function PagedPosts({
           localStorage.setItem(readPostsKey, updatedReadPosts);
         }
 
-        // 포인트 추가 (서버 액션으로 변경 가능)
-        Promise.all([
-          addWritingPoints(post.author_id, 5),
-          currentUser?.donation_id
-            ? addDonationPoints(currentUser.id, currentUser.donation_id, 5)
-            : Promise.resolve(),
-        ]).catch((error) => {
-          console.error('포인트 추가 중 오류 발생:', error);
-        });
-      }); */
+        // Server Action 호출
+        if (currentUser) {
+          addPointsServerAction(
+            post.author_id,
+            currentUser.id,
+            currentUser.donation_id || undefined
+          )
+            .then((result) => {
+              if (!result.success) {
+                console.error('Failed to add points:', result.error);
+              }
+            })
+            .catch((error) => console.error('Error calling addPoints Server Action:', error));
+        }
+      }, 0);
     },
     [readPosts, userId, currentUser, router]
   );
