@@ -171,7 +171,7 @@ export default function PagedPosts({
       const startTime = performance.now();
       console.log('Click time:', startTime);
 
-      router.push(`/post/detail/${post.id}`);
+      router.push(`/experiment`);
 
       const endTime = performance.now();
       console.log('After router.push time:', endTime);
