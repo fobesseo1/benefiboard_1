@@ -1,3 +1,5 @@
+//app>post>detail>[id]>page.tsx
+
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
 import createSupabaseServerClient from '@/lib/supabse/server';

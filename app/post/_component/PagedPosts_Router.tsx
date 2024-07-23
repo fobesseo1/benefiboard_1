@@ -179,7 +179,7 @@ export default function PagedPosts({
       }
 
       // 포인트 추가 로직을 백그라운드에서 실행
-      if (currentUser) {
+      /* if (currentUser) {
         // requestIdleCallback을 사용하여 브라우저가 idle 상태일 때 실행
         requestIdleCallback(() => {
           addPointsServerAction(
@@ -190,6 +190,17 @@ export default function PagedPosts({
             console.error('Error adding points:', error);
           });
         });
+      } */
+
+      // 포인트 추가 로직을 sendBeacon을 사용하여 실행
+      if (currentUser) {
+        const data = {
+          authorId: post.author_id,
+          userId: currentUser.id,
+          donationId: currentUser.donation_id || undefined,
+        };
+
+        navigator.sendBeacon('/api/add-points', JSON.stringify(data));
       }
     },
     [currentUser, readPosts, userId, router]
