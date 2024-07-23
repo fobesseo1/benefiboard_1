@@ -168,11 +168,10 @@ export default function PagedPosts({
   const handlePostClick = useCallback(
     (post: PostType) => {
       // 즉시 페이지 이동
-      /* router.push(`/post/detail/${post.id}`); */
-      router.push('/experiment');
+      router.push(`/post/detail/${post.id}`);
 
       // 나머지 작업을 비동기적으로 수행
-      setTimeout(() => {
+      queueMicrotask(() => {
         // 로컬 상태 업데이트
         setReadPosts((prev) => ({ ...prev, [post.id]: true }));
 
@@ -189,15 +188,9 @@ export default function PagedPosts({
             post.author_id,
             currentUser.id,
             currentUser.donation_id || undefined
-          )
-            .then((result) => {
-              if (!result.success) {
-                console.error('Failed to add points:', result.error);
-              }
-            })
-            .catch((error) => console.error('Error calling addPoints Server Action:', error));
+          ).catch((error) => console.error('Error calling addPoints Server Action:', error));
         }
-      }, 0);
+      });
     },
     [readPosts, userId, currentUser, router]
   );
@@ -218,9 +211,17 @@ export default function PagedPosts({
   return (
     <div className="relative lg:w-[948px] mx-auto w-full ">
       {posts.map((post) => (
-        <div key={post.id} onClick={() => handlePostClick(post)}>
+        <Link
+          key={post.id}
+          href={`/post/detail/${post.id}`}
+          prefetch={true}
+          onClick={(e) => {
+            e.preventDefault();
+            handlePostClick(post);
+          }}
+        >
           <PostItem post={post} isRead={readPosts[post.id] || false} />
-        </div>
+        </Link>
       ))}
 
       {isTopPosts && (

@@ -269,15 +269,11 @@ export async function handleDonationPost(
 }
 
 //포스트 클릭시 작성자 및 도네이션 포인트 적립 서버액션
-export async function addPointsServerAction(
-  authorId: string,
-  currentUserId: string,
-  donationId: string | undefined
-) {
+export async function addPointsServerAction(authorId: string, userId: string, donationId?: string) {
   try {
     await Promise.all([
       addWritingPoints(authorId, 5),
-      donationId ? addDonationPoints(currentUserId, donationId, 5) : Promise.resolve(),
+      donationId ? addDonationPoints(userId, donationId, 5) : Promise.resolve(),
     ]);
     return { success: true };
   } catch (error) {
