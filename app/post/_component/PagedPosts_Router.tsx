@@ -172,7 +172,7 @@ export default function PagedPosts({
       /* router.push(`/post/detail/${post.id}`); */
       router.push('/experiment');
 
-      // 포인트 추가 로직을 별도의 비동기 함수로 분리
+      /* // 포인트 추가 로직을 별도의 비동기 함수로 분리
       const addPoints = async () => {
         if (currentUser) {
           try {
@@ -188,7 +188,7 @@ export default function PagedPosts({
       };
 
       // 백그라운드에서 포인트 추가 실행
-      addPoints();
+      addPoints(); */
 
       // 로컬 상태 업데이트
       setReadPosts((prev) => ({ ...prev, [post.id]: true }));
