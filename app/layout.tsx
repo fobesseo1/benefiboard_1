@@ -4,21 +4,26 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Poppins, Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 import { getCurrentUser } from '@/lib/cookies';
-import Header from './_components/Header';
-import Footer from './_components/Footer';
+import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import LoadingSpinner from './_components/LoadingSpinner';
 import { CurrentUserType } from '@/types/types';
-import AuthManager from './_components/AuthManager';
+import { cache } from 'react';
 
-const inter = Inter({ subsets: ['latin'] });
+const Header = dynamic(() => import('./_components/Header'), { ssr: true });
+const Footer = dynamic(() => import('./_components/Footer'), { ssr: true });
+const AuthManager = dynamic(() => import('./_components/AuthManager'), { ssr: false });
+
+const inter = Inter({ subsets: ['latin'], display: 'swap' });
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '600', '800'],
+  display: 'swap',
 });
 const notoSansKR = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '600', '800'],
+  display: 'swap',
 });
 
 export const cls = (...classnames: string[]) => {
@@ -39,6 +44,10 @@ export const metadata: Metadata = {
     icon: '/logo-square.svg',
   },
 };
+
+const getCurrentUserCached = cache(async () => {
+  return await getCurrentUser();
+});
 
 function UserAwareLayout({
   children,
@@ -64,7 +73,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const currentUser: CurrentUserType | null = await getCurrentUser();
+  const currentUser: CurrentUserType | null = await getCurrentUserCached();
 
   return (
     <html lang="ko">

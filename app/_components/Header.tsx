@@ -1,4 +1,5 @@
 // app/_components/Header.tsx
+import Image from 'next/image';
 import Link from 'next/link';
 import HeaderBackClick from './HeaderBackClick';
 import HeaderCommonSheet from './HeaderCommonSheet';
@@ -10,9 +11,11 @@ const Header = ({ currentUser }: { currentUser: CurrentUserType | null }) => {
       <header className="h-16 bg-white flex items-center justify-between px-6 border-b-[1px] border-gray-200 lg:w-[948px] mx-auto">
         <HeaderBackClick />
         <Link href="/">
-          <img
+          <Image
             src="/logo-benefiboard.svg"
             alt=""
+            width={100}
+            height={50}
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
           />
         </Link>

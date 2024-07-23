@@ -17,12 +17,12 @@ export default function AuthManager() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session && session.expires_at) {
-        const expiresAt = new Date(session.expires_at * 1000); // convert to milliseconds
+        const expiresAt = new Date(session.expires_at * 1000);
         const now = new Date();
-        const daysUntilExpiry = (expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24);
+        const timeUntilExpiry = expiresAt.getTime() - now.getTime();
 
-        // 만료 7일 전에 경고
-        if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
+        if (timeUntilExpiry <= 7 * 24 * 60 * 60 * 1000) {
+          // 7일 이내
           const lastWarningDate = localStorage.getItem('lastSessionWarning');
           const today = new Date().toDateString();
 
@@ -31,15 +31,13 @@ export default function AuthManager() {
             localStorage.setItem('lastSessionWarning', today);
           }
         }
+
+        // 만료 시간에 맞춰 다음 체크 예약
+        setTimeout(checkSession, timeUntilExpiry);
       }
     };
 
-    // 하루에 한 번 세션 체크
-    const checkInterval = 24 * 60 * 60 * 1000; // 24 hours
-    const interval = setInterval(checkSession, checkInterval);
-    checkSession(); // 초기 체크
-
-    return () => clearInterval(interval);
+    checkSession();
   }, [supabase]);
 
   useEffect(() => {

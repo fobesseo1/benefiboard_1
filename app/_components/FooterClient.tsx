@@ -1,15 +1,23 @@
 // app/_components/FooterClient.tsx
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { BiDice6, BiHomeAlt2, BiMenu, BiMessageDots, BiPlusCircle } from 'react-icons/bi';
 import CommonSheet from './CommonSheet';
 import Link from 'next/link';
 import { CurrentUserType } from '@/types/types';
+import { useEffect } from 'react';
 
 const FooterClient = ({ currentUser }: { currentUser: CurrentUserType | null }) => {
   const pathname = usePathname();
   const categoryId = pathname.split('/').pop();
+  const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch('/post');
+    router.prefetch('/goodluck');
+    router.prefetch('/message');
+  }, [router]);
 
   return (
     <>
