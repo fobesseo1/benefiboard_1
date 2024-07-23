@@ -15,10 +15,20 @@ export default async function createSupabaseServerClient() {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // 쿠키 설정 실패 시 로그 기록
+            console.error('Failed to set cookie:', error);
+          }
         },
         remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options });
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // 쿠키 제거 실패 시 로그 기록
+            console.error('Failed to remove cookie:', error);
+          }
         },
       },
     }
