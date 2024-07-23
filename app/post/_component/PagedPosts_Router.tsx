@@ -169,8 +169,8 @@ export default function PagedPosts({
     (post: PostType) => {
       // 즉시 페이지 이동
 
-      /* router.push(`/post/detail/${post.id}`); */
-      router.push('/experiment');
+      router.push(`/post/detail/${post.id}`);
+      /* router.push('/experiment'); */
 
       /* // 포인트 추가 로직을 별도의 비동기 함수로 분리
       const addPoints = async () => {
