@@ -5,7 +5,6 @@ import { AlertDialog } from '@/components/ui/alert-dialog';
 import {
   addDonationPoints,
   addUserClickPoints,
-  addUserPoints,
   addWritingClickPoints,
 } from '../_action/adPointSupabase';
 import { PointAnimation, calculatePoints } from './PointAnimation';
@@ -45,20 +44,20 @@ export default function AdAlert({
   const { getTransformStyle, isDragging } = useDrag(handleAdClose);
 
   const addPointsAsync = useCallback(
-    async (newPoints: number) => {
+    (newPoints: number) => {
       if (pointsAddedRef.current) return;
 
       pointsAddedRef.current = true;
 
       if (userId) {
-        try {
-          await addUserPoints(userId, newPoints);
-          setPoints((prevPoints) => prevPoints + newPoints);
-          console.log(`Added ${newPoints} points to user ${userId}`);
-        } catch (error) {
-          console.error('Error adding points:', error);
-          pointsAddedRef.current = false;
-        }
+        const data = {
+          userId,
+          points: newPoints,
+        };
+
+        navigator.sendBeacon('/api/add-user-points', JSON.stringify(data));
+        setPoints((prevPoints) => prevPoints + newPoints);
+        console.log(`Sent request to add ${newPoints} points to user ${userId}`);
       }
     },
     [userId]
