@@ -33,9 +33,9 @@ export default function AdAlert({
   const [points, setPoints] = useState(initialPoints);
   const [adClickPoints, setAdClickPoints] = useState(0);
   const [showAdClickAnimation, setShowAdClickAnimation] = useState(false);
-  const animationExecutedRef = useRef(false);
   const adClickExecutedRef = useRef(false);
   const earnedPointsRef = useRef(0);
+  const pointsAddedRef = useRef(false);
 
   const handleAdClose = useCallback(() => {
     setShowAd(false);
@@ -43,18 +43,19 @@ export default function AdAlert({
 
   const { getTransformStyle, isDragging } = useDrag(handleAdClose);
 
-  const handleAnimationEnd = useCallback(
-    (newPoints: number) => {
-      if (animationExecutedRef.current) return;
-      animationExecutedRef.current = true;
-
-      if (userId) {
-        addUserPoints(userId, newPoints).catch((error) =>
-          console.error('Error adding points:', error)
-        );
+  const addPointsAsync = useCallback(
+    async (newPoints: number) => {
+      if (userId && !pointsAddedRef.current) {
+        try {
+          await addUserPoints(userId, newPoints);
+          setPoints((prevPoints) => prevPoints + newPoints);
+          console.log(`Added ${newPoints} points to user ${userId}`);
+          pointsAddedRef.current = true;
+        } catch (error) {
+          console.error('Error adding points:', error);
+        }
       }
 
-      setPoints((prevPoints) => prevPoints + newPoints);
       if (newPoints >= 3) {
         setShowAd(true);
       }
@@ -98,16 +99,8 @@ export default function AdAlert({
   useEffect(() => {
     earnedPointsRef.current = calculatePoints();
     setShowAnimation(true);
-
-    // 애니메이션이 표시되지 않더라도 포인트를 적립합니다.
-    const timer = setTimeout(() => {
-      if (!animationExecutedRef.current && userId) {
-        handleAnimationEnd(earnedPointsRef.current);
-      }
-    }, 50); // 짧은 지연 시간 후 실행
-
-    return () => clearTimeout(timer);
-  }, [userId, handleAnimationEnd]);
+    addPointsAsync(earnedPointsRef.current);
+  }, [addPointsAsync]);
 
   return (
     <>
@@ -119,7 +112,11 @@ export default function AdAlert({
             initialPoints={initialPoints}
             earnedPoints={earnedPointsRef.current}
             donationPoints={5}
-            onAnimationEnd={handleAnimationEnd}
+            onAnimationEnd={() => {
+              if (!pointsAddedRef.current) {
+                addPointsAsync(earnedPointsRef.current);
+              }
+            }}
             isAdClick={false}
           />
         </div>
@@ -151,8 +148,7 @@ export default function AdAlert({
             initialPoints={points}
             earnedPoints={adClickPoints}
             donationPoints={500}
-            onAnimationEnd={(clickPoints: number) => {
-              setPoints((prevPoints) => prevPoints + clickPoints);
+            onAnimationEnd={() => {
               setShowAdClickAnimation(false);
               adClickExecutedRef.current = false; // Reset for potential future ad clicks
             }}
