@@ -2,11 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertDialog } from '@/components/ui/alert-dialog';
-import {
-  addDonationPoints,
-  addUserClickPoints,
-  addWritingClickPoints,
-} from '../_action/adPointSupabase';
 import { PointAnimation, calculatePoints } from './PointAnimation';
 import { AdContentCard } from './AdContent';
 import { useDrag } from '@/hooks/useDrag';
@@ -63,37 +58,32 @@ export default function AdAlert({
     [userId]
   );
 
-  const handleAdClick = useCallback(async () => {
+  const handleAdClick = useCallback(() => {
     if (adClickExecutedRef.current) return;
     adClickExecutedRef.current = true;
 
     const readerClickPoints = Math.floor(Math.random() * (600 - 300 + 1)) + 300;
     setAdClickPoints(readerClickPoints);
 
-    if (userId) {
-      await addUserClickPoints(userId, readerClickPoints);
+    // sendBeacon을 사용하여 포인트 적립 요청 전송
+    if (userId && currentUser) {
+      const data = {
+        userId,
+        authorId: author_id,
+        readerClickPoints,
+        donationId: currentUser.donation_id,
+      };
+      navigator.sendBeacon('/api/add-ad-click-points', JSON.stringify(data));
     }
 
-    if (author_id) {
-      const writerPoints = 500;
-      await addWritingClickPoints(author_id);
-    }
-
-    if (currentUser && currentUser.donation_id) {
-      const donationPoints = 500;
-      try {
-        await addDonationPoints(currentUser.id, currentUser.donation_id, donationPoints);
-      } catch (error) {
-        console.error('Error adding donation points:', error);
-      }
-    }
-
+    // 즉시 애니메이션 표시
     setShowAdClickAnimation(true);
 
-    setTimeout(() => {
-      window.open(AD_URL, '_blank');
-      setShowAd(false);
-    }, 2500);
+    // 새 창에서 광고 URL 열기
+    window.open(AD_URL, '_blank');
+
+    // 광고 닫기
+    setShowAd(false);
   }, [userId, author_id, currentUser]);
 
   useEffect(() => {
