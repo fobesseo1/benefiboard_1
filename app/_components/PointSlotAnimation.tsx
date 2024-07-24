@@ -1,7 +1,7 @@
-// AnimatedPointCounter.tsx
+// app/_components/PointSlotAnimation.tsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface AnimatedPointCounterProps {
@@ -50,37 +50,29 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  const generateRandomNumbers = () => {
-    return Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, '0');
-  };
-
   useEffect(() => {
     if (addedPoints > 0) {
       setIsAnimating(true);
       const finalValue = currentPoints + addedPoints;
+      const steps = 20; // 애니메이션 단계 수
+      const increment = addedPoints / steps;
+      let step = 0;
 
-      let timer = setInterval(() => {
+      const timer = setInterval(() => {
         setDisplayedPoints((prev) => {
-          if (prev < 1000) {
-            return parseInt(generateRandomNumbers());
-          } else {
-            const unchangedPart = Math.floor(prev / 1000) * 1000;
-            const changingPart = parseInt(generateRandomNumbers());
-            return unchangedPart + changingPart;
+          const newValue = Math.min(prev + increment, finalValue);
+          if (newValue >= finalValue || step >= steps) {
+            clearInterval(timer);
+            setIsAnimating(false);
+            if (onAnimationComplete) {
+              onAnimationComplete();
+            }
+            return finalValue;
           }
+          step++;
+          return newValue;
         });
       }, 100);
-
-      setTimeout(() => {
-        clearInterval(timer);
-        setDisplayedPoints(finalValue);
-        setIsAnimating(false);
-        if (onAnimationComplete) {
-          onAnimationComplete();
-        }
-      }, 2000);
 
       const visibilityTimer = setTimeout(() => {
         setIsVisible(false);
@@ -107,7 +99,7 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
       exit={{ opacity: 0, y: -20 }}
     >
       <div className="relative flex flex-col items-center justify-center text-3xl font-semibold w-72 bg-emerald-300 rounded-lg px-4 py-2">
-        <div className="text-base ">포인트</div>
+        <div className="text-base">포인트</div>
         <AnimatePresence>
           <motion.div
             key={isAnimating ? 'animating' : 'static'}
@@ -117,11 +109,11 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
             transition={{ duration: 0.5 }}
             className="flex items-center justify-center"
           >
-            {formatNumber(displayedPoints)}
+            {formatNumber(Math.floor(displayedPoints))}
           </motion.div>
         </AnimatePresence>
         {!isLoggedIn && (
-          <div className="text-sm mt-2 text-center z-[1007] " onClick={(e) => e.stopPropagation()}>
+          <div className="text-sm mt-2 text-center z-[1007]" onClick={(e) => e.stopPropagation()}>
             <p>로그인하면 포인트 적립</p>
             <p
               className="text-red-600 underline cursor-pointer z-[1008]"
