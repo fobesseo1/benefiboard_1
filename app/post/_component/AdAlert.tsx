@@ -46,6 +46,10 @@ export default function AdAlert({
 
   const addPointsAsync = useCallback(
     async (newPoints: number) => {
+      if (newPoints >= 3) {
+        setShowAd(true);
+      }
+
       if (userId && !pointsAddedRef.current) {
         try {
           await addUserPoints(userId, newPoints);
@@ -55,10 +59,6 @@ export default function AdAlert({
         } catch (error) {
           console.error('Error adding points:', error);
         }
-      }
-
-      if (newPoints >= 3) {
-        setShowAd(true);
       }
     },
     [userId]
