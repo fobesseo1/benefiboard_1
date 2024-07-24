@@ -36,6 +36,7 @@ export default function AdAlert({
   const adClickExecutedRef = useRef(false);
   const earnedPointsRef = useRef(0);
   const pointsAddedRef = useRef(false);
+  const addPointsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleAdClose = useCallback(() => {
     setShowAd(false);
@@ -99,7 +100,31 @@ export default function AdAlert({
   useEffect(() => {
     earnedPointsRef.current = calculatePoints();
     setShowAnimation(true);
-    addPointsAsync(earnedPointsRef.current);
+
+    // 포인트 추가를 지연시키고 타임아웃을 저장
+    addPointsTimeoutRef.current = setTimeout(() => {
+      if (!pointsAddedRef.current) {
+        addPointsAsync(earnedPointsRef.current);
+      }
+    }, 1000); // 1초 지연
+
+    return () => {
+      // 컴포넌트 언마운트 시 타임아웃 클리어
+      if (addPointsTimeoutRef.current) {
+        clearTimeout(addPointsTimeoutRef.current);
+      }
+    };
+  }, [addPointsAsync]);
+
+  const handleAnimationEnd = useCallback(() => {
+    // 애니메이션이 끝나면 즉시 포인트 추가
+    if (!pointsAddedRef.current) {
+      addPointsAsync(earnedPointsRef.current);
+    }
+    // 지연된 포인트 추가 취소
+    if (addPointsTimeoutRef.current) {
+      clearTimeout(addPointsTimeoutRef.current);
+    }
   }, [addPointsAsync]);
 
   return (
@@ -112,11 +137,7 @@ export default function AdAlert({
             initialPoints={initialPoints}
             earnedPoints={earnedPointsRef.current}
             donationPoints={5}
-            onAnimationEnd={() => {
-              if (!pointsAddedRef.current) {
-                addPointsAsync(earnedPointsRef.current);
-              }
-            }}
+            onAnimationEnd={handleAnimationEnd}
             isAdClick={false}
           />
         </div>
