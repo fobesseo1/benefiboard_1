@@ -79,11 +79,13 @@ export default function AdAlert({
     // 즉시 애니메이션 표시
     setShowAdClickAnimation(true);
 
-    // 새 창에서 광고 URL 열기
-    window.open(AD_URL, '_blank');
-
     // 광고 닫기
     setShowAd(false);
+
+    // 0.8초 후에 새 창에서 광고 URL 열기
+    setTimeout(() => {
+      window.open(AD_URL, '_blank');
+    }, 800);
   }, [userId, author_id, currentUser]);
 
   useEffect(() => {

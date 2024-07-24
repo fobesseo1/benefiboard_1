@@ -44,11 +44,11 @@ export function PointAnimation({
           onAnimationEnd(earnedPoints);
         }
       },
-      earnedPoints >= 3 && earnedPoints < 100 ? 300 : 3000
+      isAdClick ? 800 : earnedPoints >= 3 && earnedPoints < 100 ? 800 : 3000
     );
 
     return () => clearTimeout(timer);
-  }, [earnedPoints, onAnimationEnd]);
+  }, [earnedPoints, onAnimationEnd, isAdClick]);
 
   const handleAnimationClick = (e: React.MouseEvent) => {
     e.stopPropagation();
