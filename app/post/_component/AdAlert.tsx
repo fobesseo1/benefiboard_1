@@ -92,7 +92,7 @@ export default function AdAlert({
 
     if (earnedPointsRef.current >= 3) {
       // 애니메이션 시작 직후 광고 표시 예약
-      setTimeout(() => setShowAd(true), 100);
+      setTimeout(() => setShowAd(true), 500);
     }
 
     addPointsTimeoutRef.current = setTimeout(() => {
