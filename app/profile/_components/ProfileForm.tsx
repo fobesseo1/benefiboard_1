@@ -31,6 +31,7 @@ type PartnerUser = {
   id: string;
   partner_name: string;
   category: string;
+  username: string;
 };
 
 export default function ProfileForm({ profile, isEditable }: ProfileFormProps) {
@@ -221,7 +222,7 @@ export default function ProfileForm({ profile, isEditable }: ProfileFormProps) {
                 {isSelfSupport
                   ? '누구: 나에게'
                   : currentSupportTarget
-                    ? ` 누구: ${currentSupportTarget.partner_name}`
+                    ? ` 누구: ${currentSupportTarget.username}`
                     : 'No support target selected'}
               </p>
             </div>
@@ -337,7 +338,7 @@ export default function ProfileForm({ profile, isEditable }: ProfileFormProps) {
           </div>
           {selectedCategory && selectedCategory !== '나에게' && (
             <div className="partner-select">
-              <label className="block text-sm font-medium text-gray-600">Select Partner</label>
+              <label className="block text-sm font-medium text-gray-600">파트너 선택</label>
               <Select
                 value={supportTarget}
                 onValueChange={(value) => {
@@ -352,7 +353,7 @@ export default function ProfileForm({ profile, isEditable }: ProfileFormProps) {
                 <SelectContent>
                   {filteredPartnerUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.partner_name}
+                      {user.username}
                     </SelectItem>
                   ))}
                 </SelectContent>

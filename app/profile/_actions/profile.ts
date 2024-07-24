@@ -44,7 +44,7 @@ export const fetchPartnerUsers = async () => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('userdata')
-    .select('id, partner_name, category')
+    .select('id, partner_name, category, username')
     .eq('user_type', 'partner');
 
   if (error) {
