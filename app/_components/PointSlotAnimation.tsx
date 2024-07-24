@@ -50,36 +50,47 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
+  const generateRandomNumbers = () => {
+    return Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0');
+  };
+
   useEffect(() => {
     if (addedPoints > 0) {
       setIsAnimating(true);
       const finalValue = currentPoints + addedPoints;
-      const steps = 20; // 애니메이션 단계 수
-      const increment = addedPoints / steps;
+      const totalDuration = 2000; // 총 애니메이션 시간 (ms)
+      const spinDuration = 1500; // 숫자가 빠르게 변하는 시간 (ms)
+      const finalDisplayDuration = 500; // 최종 값 표시 시간 (ms)
+      const interval = 50; // 각 단계 사이의 간격 (ms)
+      const spinSteps = spinDuration / interval;
       let step = 0;
 
-      const timer = setInterval(() => {
-        setDisplayedPoints((prev) => {
-          const newValue = Math.min(prev + increment, finalValue);
-          if (newValue >= finalValue || step >= steps) {
-            clearInterval(timer);
+      const spinTimer = setInterval(() => {
+        if (step < spinSteps) {
+          setDisplayedPoints(parseInt(generateRandomNumbers()));
+          step++;
+        } else {
+          clearInterval(spinTimer);
+          setDisplayedPoints(finalValue);
+
+          // 최종 값 표시 후 애니메이션 완료 처리
+          setTimeout(() => {
             setIsAnimating(false);
             if (onAnimationComplete) {
               onAnimationComplete();
             }
-            return finalValue;
-          }
-          step++;
-          return newValue;
-        });
-      }, 100);
+          }, finalDisplayDuration);
+        }
+      }, interval);
 
       const visibilityTimer = setTimeout(() => {
         setIsVisible(false);
-      }, 5000);
+      }, totalDuration + 1000); // 애니메이션 완료 후 1초 더 표시
 
       return () => {
-        clearInterval(timer);
+        clearInterval(spinTimer);
         clearTimeout(visibilityTimer);
       };
     }
@@ -109,7 +120,7 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
             transition={{ duration: 0.5 }}
             className="flex items-center justify-center"
           >
-            {formatNumber(Math.floor(displayedPoints))}
+            {formatNumber(displayedPoints)}
           </motion.div>
         </AnimatePresence>
         {!isLoggedIn && (
