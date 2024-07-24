@@ -104,7 +104,7 @@ export default function AdAlert({
       if (!animationExecutedRef.current && userId) {
         handleAnimationEnd(earnedPointsRef.current);
       }
-    }, 100); // 짧은 지연 시간 후 실행
+    }, 50); // 짧은 지연 시간 후 실행
 
     return () => clearTimeout(timer);
   }, [userId, handleAnimationEnd]);
