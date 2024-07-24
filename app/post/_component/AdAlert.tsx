@@ -46,18 +46,18 @@ export default function AdAlert({
 
   const addPointsAsync = useCallback(
     async (newPoints: number) => {
-      if (newPoints >= 3) {
-        setShowAd(true);
-      }
+      if (pointsAddedRef.current) return;
 
-      if (userId && !pointsAddedRef.current) {
+      pointsAddedRef.current = true;
+
+      if (userId) {
         try {
           await addUserPoints(userId, newPoints);
           setPoints((prevPoints) => prevPoints + newPoints);
           console.log(`Added ${newPoints} points to user ${userId}`);
-          pointsAddedRef.current = true;
         } catch (error) {
           console.error('Error adding points:', error);
+          pointsAddedRef.current = false;
         }
       }
     },
@@ -101,15 +101,18 @@ export default function AdAlert({
     earnedPointsRef.current = calculatePoints();
     setShowAnimation(true);
 
-    // 포인트 추가를 지연시키고 타임아웃을 저장
+    if (earnedPointsRef.current >= 3) {
+      // 애니메이션 시작 직후 광고 표시 예약
+      setTimeout(() => setShowAd(true), 100);
+    }
+
     addPointsTimeoutRef.current = setTimeout(() => {
       if (!pointsAddedRef.current) {
         addPointsAsync(earnedPointsRef.current);
       }
-    }, 100); // 0.1초 지연
+    }, 100);
 
     return () => {
-      // 컴포넌트 언마운트 시 타임아웃 클리어
       if (addPointsTimeoutRef.current) {
         clearTimeout(addPointsTimeoutRef.current);
       }
@@ -117,11 +120,9 @@ export default function AdAlert({
   }, [addPointsAsync]);
 
   const handleAnimationEnd = useCallback(() => {
-    // 애니메이션이 끝나면 즉시 포인트 추가
     if (!pointsAddedRef.current) {
       addPointsAsync(earnedPointsRef.current);
     }
-    // 지연된 포인트 추가 취소
     if (addPointsTimeoutRef.current) {
       clearTimeout(addPointsTimeoutRef.current);
     }
@@ -171,7 +172,7 @@ export default function AdAlert({
             donationPoints={500}
             onAnimationEnd={() => {
               setShowAdClickAnimation(false);
-              adClickExecutedRef.current = false; // Reset for potential future ad clicks
+              adClickExecutedRef.current = false;
             }}
             isAdClick={true}
           />
