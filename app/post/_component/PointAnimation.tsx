@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import PointSlotAnimation from '@/app/_components/PointSlotAnimation';
 import { CurrentUserType } from '@/types/types';
@@ -25,11 +25,11 @@ interface PointAnimationProps {
 
 export const calculatePoints = (): number => {
   const random = Math.random();
-  if (random < 1 / 8) return 0; // 1/8 확률로 0 포인트
-  if (random < 3 / 8) return 1; // 2/8 확률로 1 포인트
-  if (random < 5 / 8) return 2; // 2/8 확률로 2 포인트
-  if (random < 7 / 8) return 3; // 2/8 확률로 3 포인트
-  return 25; // 1/8 확률로 25 포인트
+  if (random < 1 / 8) return 0;
+  if (random < 3 / 8) return 1;
+  if (random < 5 / 8) return 2;
+  if (random < 7 / 8) return 3;
+  return 25;
 };
 
 export function PointAnimation({
@@ -41,11 +41,22 @@ export function PointAnimation({
   onAnimationEnd,
   isAdClick,
 }: PointAnimationProps) {
-  const [showAnimation, setShowAnimation] = useState(true);
+  const [showAnimation, setShowAnimation] = useState(false);
   const [totalPoints, setTotalPoints] = useState(initialPoints);
+  const [startBalloonAnimation, setStartBalloonAnimation] = useState(false);
+
+  const startAnimations = useCallback(() => {
+    setShowAnimation(true);
+    setStartBalloonAnimation(true);
+  }, []);
 
   useEffect(() => {
-    const timer = setTimeout(
+    // 약간의 지연 후 애니메이션 시작
+    const startTimer = setTimeout(() => {
+      startAnimations();
+    }, 100);
+
+    const endTimer = setTimeout(
       () => {
         setShowAnimation(false);
         if (onAnimationEnd) {
@@ -55,8 +66,11 @@ export function PointAnimation({
       isAdClick ? 800 : earnedPoints >= 3 && earnedPoints < 100 ? 800 : 5000
     );
 
-    return () => clearTimeout(timer);
-  }, [earnedPoints, onAnimationEnd, isAdClick]);
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(endTimer);
+    };
+  }, [earnedPoints, onAnimationEnd, isAdClick, startAnimations]);
 
   const handleAnimationClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -119,12 +133,14 @@ export function PointAnimation({
           </div>
         </div>
       </div>
-      <DynamicBalloonAnimation
-        userId={userId}
-        currentUser={currentUser}
-        earnedPoints={earnedPoints}
-        donationPoints={donationPoints}
-      />
+      {startBalloonAnimation && (
+        <DynamicBalloonAnimation
+          userId={userId}
+          currentUser={currentUser}
+          earnedPoints={earnedPoints}
+          donationPoints={donationPoints}
+        />
+      )}
       <div
         className="fixed -top-[264px] left-0 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-[1005]"
         onClick={handleAnimationClick}
