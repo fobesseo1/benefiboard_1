@@ -11,7 +11,7 @@ interface AnimatedPointCounterProps {
   isLoggedIn: boolean;
 }
 
-const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
+const PointSlotAnimation: React.FC<AnimatedPointCounterProps> = ({
   currentPoints,
   addedPoints,
   onAnimationComplete,
@@ -87,7 +87,7 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
 
       const visibilityTimer = setTimeout(() => {
         setIsVisible(false);
-      }, totalDuration + 1000); // 애니메이션 완료 후 1초 더 표시
+      }, totalDuration + 3000); // 애니메이션 완료 후 1초 더 표시
 
       return () => {
         clearInterval(spinTimer);
@@ -147,4 +147,4 @@ const AnimatedPointCounter: React.FC<AnimatedPointCounterProps> = ({
   );
 };
 
-export default AnimatedPointCounter;
+export default PointSlotAnimation;

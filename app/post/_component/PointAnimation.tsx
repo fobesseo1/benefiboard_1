@@ -1,9 +1,10 @@
 //app>post>_component>PointAnimation.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import AnimatedPointCounter from '@/app/_components/PointSlotAnimation';
+import PointSlotAnimation from '@/app/_components/PointSlotAnimation';
 import { CurrentUserType } from '@/types/types';
 import { EmojiHaha, EmojiSad } from '@/app/_emoji-gather/emoji-gather';
+import { BalloonAnimation } from './BalloonAnimation';
 
 interface PointAnimationProps {
   userId: string | null;
@@ -44,7 +45,7 @@ export function PointAnimation({
           onAnimationEnd(earnedPoints);
         }
       },
-      isAdClick ? 800 : earnedPoints >= 3 && earnedPoints < 100 ? 800 : 3000
+      isAdClick ? 800 : earnedPoints >= 3 && earnedPoints < 100 ? 800 : 5000
     );
 
     return () => clearTimeout(timer);
@@ -60,19 +61,10 @@ export function PointAnimation({
   return (
     <>
       <div className="fixed flex flex-col items-center top-16 left-0 -translate-x-1/2 -translate-y-1/2 gap-4 z-50 ">
-        <div className="flex items-center justify-center mt-60">
+        <div className="flex items-center justify-center -mt-16">
           {earnedPoints === 0 ? <EmojiSad /> : <EmojiHaha />}
         </div>
-        {currentUser && (
-          <div className="w-72 h-16 rounded-xl bg-gradient-to-b from-pink-100 to-pink-200 flex items-center justify-center ">
-            <p className="text-pink-400 text-xl font-semibold">
-              ♡ {currentUser?.partner_name}
-              <span className="text-sm"> 님에게 기부</span> ♡
-            </p>
-          </div>
-        )}
-
-        <div className="flex gap-8">
+        <div className="flex gap-8 mt-48">
           <div
             className={`flex flex-col justify-center items-center gap-2 ${
               earnedPoints === 0
@@ -120,11 +112,17 @@ export function PointAnimation({
           </div>
         </div>
       </div>
+      <BalloonAnimation
+        userId={userId}
+        currentUser={currentUser}
+        earnedPoints={earnedPoints}
+        donationPoints={donationPoints}
+      />
       <div
         className="fixed -top-[264px] left-0 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-[1005]"
         onClick={handleAnimationClick}
       >
-        <AnimatedPointCounter
+        <PointSlotAnimation
           currentPoints={totalPoints}
           addedPoints={earnedPoints}
           onAnimationComplete={() => {}}

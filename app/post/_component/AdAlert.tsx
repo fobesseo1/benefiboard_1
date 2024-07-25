@@ -6,6 +6,7 @@ import { PointAnimation, calculatePoints } from './PointAnimation';
 import { AdContentCard } from './AdContent';
 import { useDrag } from '@/hooks/useDrag';
 import { CurrentUserType } from '@/types/types';
+import { BalloonAnimation } from './BalloonAnimation';
 
 const AD_URL = 'https://link.coupang.com/a/bKbEkY';
 
@@ -31,6 +32,15 @@ export default function AdAlert({
   const earnedPointsRef = useRef(0);
   const pointsAddedRef = useRef(false);
   const addPointsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  /* const [showBalloons, setShowBalloons] = useState(false);
+
+  useEffect(() => {
+    if (showAnimation || showAdClickAnimation) {
+      setShowBalloons(true);
+      const timer = setTimeout(() => setShowBalloons(false), 10000); // 10초 후에 풍선 애니메이션 숨기기
+      return () => clearTimeout(timer);
+    }
+  }, [showAnimation, showAdClickAnimation]); */
 
   const handleAdClose = useCallback(() => {
     setShowAd(false);
