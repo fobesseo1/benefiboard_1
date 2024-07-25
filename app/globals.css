@@ -233,3 +233,47 @@
   background: #888;
   border-radius: 3px;
 }
+
+/* ballon */
+
+@keyframes float-up {
+  0% {
+    transform: translateX(var(--start-x)) translateY(80vh) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(var(--start-x)) translateY(20vh) scale(1);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateX(var(--end-x)) translateY(-40vh) scale(1);
+    opacity: 0;
+  }
+}
+
+.balloon {
+  position: fixed;
+  left: 50%;
+  margin-left: -100px;
+  width: 200px;
+  height: 240px;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  animation: float-up 3s ease-in-out forwards;
+  animation-delay: var(--delay);
+}
+
+.balloon[data-type='partner'] {
+  font-size: 24px;
+}
+
+.balloon:not([data-type='partner']) {
+  font-size: 48px;
+}
