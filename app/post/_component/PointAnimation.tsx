@@ -60,7 +60,7 @@ export function PointAnimation({
   return (
     <>
       <div className="fixed flex flex-col items-center top-16 left-0 -translate-x-1/2 -translate-y-1/2 gap-4 z-50 ">
-        <div className="flex items-center justify-center ">
+        <div className="flex items-center justify-center mt-60">
           {earnedPoints === 0 ? <EmojiSad /> : <EmojiHaha />}
         </div>
         {currentUser && (
@@ -72,17 +72,17 @@ export function PointAnimation({
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-8">
           <div
-            className={`flex flex-col justify-center items-center gap-4 ${
+            className={`flex flex-col justify-center items-center gap-2 ${
               earnedPoints === 0
                 ? 'bg-gray-200'
                 : 'bg-gradient-to-r from-emerald-100 to-emerald-200 border-4 border-emerald-100'
-            } -mr-2 rounded-full p-2 w-40 h-40 relative`}
+            } -mr-2 rounded-full p-2 w-36 h-36 relative`}
             onClick={handleAnimationClick}
           >
             <p className="text-4xl font-bold text-emerald-400">
-              <span className="text-4xl">+</span>
+              <span className="text-2xl">+</span>
               {earnedPoints}
             </p>
             <p className="text-xl text-emerald-400 text-center">
@@ -93,31 +93,35 @@ export function PointAnimation({
                   : '포인트 적립'}
             </p>
             {userId ? (
-              <p className="font-semibold text-center text-emerald-400 leading-tight">
+              <p className="font-semibold text-center text-sm text-emerald-400 leading-tight tracking-tighter">
                 {earnedPoints === 0 ? '다음 기회를' : '적립완료'}
               </p>
             ) : (
-              <p className="font-semibold text-center text-emerald-400 leading-tight">
+              <p className="font-semibold text-center text-sm text-emerald-400 leading-tight tracking-tighter">
                 로그인시 적립
               </p>
             )}
           </div>
-          <div className="-ml-2 rounded-full p-2 w-40 h-40 flex flex-col justify-center items-center gap-4 bg-gradient-to-r from-pink-200 to-pink-400 border-4 border-pink-200">
+          <div className="-ml-2 rounded-full p-2 w-36 h-36 flex flex-col justify-center items-center gap-2 bg-gradient-to-r from-pink-200 to-pink-400 border-4 border-pink-200">
             <p className="text-4xl font-bold text-pink-600">
-              <span className="text-4xl">+</span>
+              <span className="text-2xl">+</span>
               {donationPoints}
             </p>
             <p className="text-xl text-pink-600 text-center">포인트 기부</p>
             {userId ? (
-              <p className="font-semibold text-center text-pink-600 leading-tight">기부완료</p>
+              <p className="font-semibold text-center text-sm text-pink-600 leading-tight tracking-tighter">
+                기부완료
+              </p>
             ) : (
-              <p className="font-semibold text-center text-pink-600 leading-tight">로그인시 기부</p>
+              <p className="font-semibold text-center text-sm text-pink-600 leading-tight tracking-tighter">
+                로그인시 기부
+              </p>
             )}
           </div>
         </div>
       </div>
       <div
-        className="fixed -top-48 left-0 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-[1005]"
+        className="fixed -top-[264px] left-0 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-[1005]"
         onClick={handleAnimationClick}
       >
         <AnimatedPointCounter
