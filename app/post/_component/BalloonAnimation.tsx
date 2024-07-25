@@ -29,7 +29,7 @@ const Balloon: React.FC<BalloonProps> = ({ delay, maxWidth, content, contentType
       await next({ opacity: 0.75, transform: `translateX(${startX}px) translateY(20vh) scale(1)` });
       await next({ transform: `translateX(${endX}px) translateY(-40vh) scale(1)` });
     },
-    config: { ...config.gentle, duration: 2000 },
+    config: { ...config.gentle, duration: 4000 },
     delay,
   });
 
