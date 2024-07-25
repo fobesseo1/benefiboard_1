@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { listformatDate } from '@/lib/utils/formDate';
 import RepostPopup from './RepostPopup';
@@ -13,12 +13,15 @@ import SiteFilter, { siteColors } from './SiteFilter';
 import { addDonationPoints } from '@/app/post/_action/adPointSupabase';
 import { CurrentUserType, RepostType } from '@/types/types';
 import { Button } from '@/components/ui/button';
+import { fetchLatestBatches } from '../_actions/fetchRepostData';
+import { fetchLatestBestBatches } from '../best/utils';
 
 type RepostDataProps = {
   initialPosts: RepostType[];
   currentUser: CurrentUserType | null;
   isBestPosts: boolean;
   initialSearchTerm?: string;
+  totalCount: number;
 };
 
 const POSTS_PER_PAGE = 20;
@@ -28,11 +31,13 @@ export default function Repost_list({
   currentUser,
   isBestPosts,
   initialSearchTerm = '',
+  totalCount: initialTotalCount,
 }: RepostDataProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [allPosts] = useState<RepostType[]>(initialPosts);
+  const [posts, setPosts] = useState<RepostType[]>(initialPosts);
+  const [totalCount, setTotalCount] = useState<number>(initialTotalCount);
   const [page, setPage] = useState<number>(() => {
     const pageParam = searchParams.get('page');
     return pageParam ? parseInt(pageParam, 10) : 1;
@@ -41,21 +46,26 @@ export default function Repost_list({
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
 
-  const filteredPosts = useMemo(() => {
-    return allPosts.filter(
-      (post) => selectedSites.length === 0 || selectedSites.includes(post.site)
-    );
-  }, [allPosts, selectedSites]);
+  const totalPages = Math.ceil(totalCount / POSTS_PER_PAGE);
 
-  const totalPages = useMemo(
-    () => Math.ceil(filteredPosts.length / POSTS_PER_PAGE),
-    [filteredPosts]
+  const fetchPosts = useCallback(
+    async (pageNum: number) => {
+      const fetchFunction = isBestPosts ? fetchLatestBestBatches : fetchLatestBatches;
+      const { data: newPosts, totalCount: newTotalCount } = await fetchFunction(
+        pageNum,
+        POSTS_PER_PAGE
+      );
+      if (newPosts) {
+        setPosts(newPosts);
+        setTotalCount(newTotalCount);
+      }
+    },
+    [isBestPosts]
   );
 
-  const currentPagePosts = useMemo(() => {
-    const startIndex = (page - 1) * POSTS_PER_PAGE;
-    return filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
-  }, [filteredPosts, page]);
+  useEffect(() => {
+    fetchPosts(page);
+  }, [page, fetchPosts]);
 
   const handlePostClick = useCallback(
     async (post: RepostType) => {
@@ -67,37 +77,44 @@ export default function Repost_list({
           .then(() => console.log('Donation points added successfully'))
           .catch((error) => console.error('Error adding donation points:', error));
       }
-
-      // 외부 페이지로 이동 (선택적)
-      /* setTimeout(() => {
-        window.location.href = post.link;
-      }, 100); */
     },
     [currentUser]
   );
 
-  const handleSiteToggle = useCallback((site: string) => {
-    setSelectedSites((prev) => {
-      const newSelectedSites =
-        site === '전체'
-          ? []
-          : prev.includes(site)
-            ? prev.filter((s) => s !== site)
-            : [...prev, site];
-      setPage(1);
-      return newSelectedSites;
-    });
-  }, []);
+  const handleSiteToggle = useCallback(
+    (site: string) => {
+      setSelectedSites((prev) => {
+        const newSelectedSites =
+          site === '전체'
+            ? []
+            : prev.includes(site)
+              ? prev.filter((s) => s !== site)
+              : [...prev, site];
+        return newSelectedSites;
+      });
+      const baseUrl = isBestPosts ? '/repost/best' : '/repost';
+      router.push(`${baseUrl}?page=1`);
+    },
+    [router, isBestPosts]
+  );
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      const baseUrl = isBestPosts ? '/repost/best' : '/repost';
+      router.push(`${baseUrl}?page=${newPage}`);
+      setPage(newPage);
+    },
+    [router, isBestPosts]
+  );
+
+  const filteredPosts = posts.filter(
+    (post) => selectedSites.length === 0 || selectedSites.includes(post.site)
+  );
 
   return (
     <div>
       <SiteFilter selectedSites={selectedSites} onSiteToggle={handleSiteToggle} />
-      {currentPagePosts.map((post) => (
+      {filteredPosts.map((post) => (
         <div
           key={`${post.id}-${post.site}`}
           className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto"

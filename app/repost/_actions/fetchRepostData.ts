@@ -76,37 +76,37 @@ export async function fetchTop10Batches(): Promise<{ success: boolean; data: Rep
 }
 
 export async function fetchLatestBatches(
-  limit = 3
-): Promise<{ success: boolean; data: RepostType[] | null; error?: any }> {
+  page: number = 1,
+  limit: number = 20
+): Promise<{ success: boolean; data: RepostType[] | null; error?: any; totalCount: number }> {
   const supabase = await createSupabaseServerClient();
+  const offset = (page - 1) * limit;
 
   try {
-    const { data: latestBatches, error: batchError } = await supabase
+    // 총 게시물 수 조회
+    const { count, error: countError } = await supabase
       .from('repost_data')
-      .select('batch')
-      .order('batch', { ascending: false })
-      .limit(limit);
+      .select('*', { count: 'exact', head: true });
 
-    if (batchError) throw batchError;
+    if (countError) throw countError;
 
-    if (latestBatches.length === 0) {
-      return { success: true, data: [] };
-    }
-
-    const batches = latestBatches.map((batch) => batch.batch);
-
+    // 페이지네이션된 데이터 조회
     const { data: posts, error: postsError } = await supabase
       .from('repost_data')
       .select('*')
-      .in('batch', batches)
       .order('batch', { ascending: false })
-      .order('order', { ascending: true });
+      .order('order', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (postsError) throw postsError;
 
-    return { success: true, data: posts };
+    return {
+      success: true,
+      data: posts,
+      totalCount: count || 0,
+    };
   } catch (error) {
     console.error('Error fetching latest batches:', error);
-    return { success: false, data: null, error };
+    return { success: false, data: null, error, totalCount: 0 };
   }
 }
