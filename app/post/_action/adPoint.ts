@@ -35,9 +35,12 @@
 
 export const calculatePoints = (): number => {
   const random = Math.random();
-  if (random < 1/8) return 0;  // 1/8 확률로 0 포인트
-  if (random < 3/8) return 1;  // 2/8 확률로 1 포인트
-  if (random < 5/8) return 2;  // 2/8 확률로 2 포인트
-  if (random < 7/8) return 3;  // 2/8 확률로 3 포인트
-  return 25;  // 1/8 확률로 25 포인트
+
+  if (random < 1 / 8) return 0; // 1/8 확률로 0 포인트
+  if (random < 3 / 8) return 1; // 2/8 확률로 1 포인트
+  if (random < 5 / 8) return 2; // 2/8 확률로 2 포인트
+  if (random < 7 / 8) return 3; // 2/8 확률로 3 포인트
+
+  // 1/8 확률로 20에서 30 사이의 숫자
+  return Math.floor(Math.random() * 11) + 20;
 };
