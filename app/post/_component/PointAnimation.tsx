@@ -10,7 +10,7 @@ import { EmojiHaha, EmojiSad } from '@/app/_emoji-gather/emoji-gather';
 
 const DynamicBalloonAnimation = dynamic(
   () => import('./BalloonAnimation').then((mod) => mod.BalloonAnimation),
-  { ssr: false }
+  { ssr: false, loading: () => <div style={{ display: 'none' }} /> }
 );
 
 interface PointAnimationProps {
@@ -44,33 +44,45 @@ export function PointAnimation({
   const [showAnimation, setShowAnimation] = useState(false);
   const [totalPoints, setTotalPoints] = useState(initialPoints);
   const [startBalloonAnimation, setStartBalloonAnimation] = useState(false);
-
-  const startAnimations = useCallback(() => {
-    setShowAnimation(true);
-    setStartBalloonAnimation(true);
-  }, []);
+  const [isComponentMounted, setIsComponentMounted] = useState(false);
 
   useEffect(() => {
-    // 약간의 지연 후 애니메이션 시작
-    const startTimer = setTimeout(() => {
-      startAnimations();
-    }, 100);
+    setIsComponentMounted(true);
+    return () => setIsComponentMounted(false);
+  }, []);
 
-    const endTimer = setTimeout(
-      () => {
-        setShowAnimation(false);
-        if (onAnimationEnd) {
-          onAnimationEnd(earnedPoints);
-        }
-      },
-      isAdClick ? 800 : earnedPoints >= 3 && earnedPoints < 100 ? 800 : 5000
-    );
+  const startAnimations = useCallback(() => {
+    if (isComponentMounted) {
+      setShowAnimation(true);
+      setTimeout(() => setStartBalloonAnimation(true), 100);
+    }
+  }, [isComponentMounted]);
+
+  useEffect(() => {
+    if (!isComponentMounted) return;
+
+    const animationStartDelay = 500;
+    const animationDuration = isAdClick
+      ? 800
+      : earnedPoints >= 3 && earnedPoints < 100
+        ? 800
+        : 5000;
+
+    const startTimer = setTimeout(startAnimations, animationStartDelay);
+
+    const endTimer = setTimeout(() => {
+      setShowAnimation(false);
+      setStartBalloonAnimation(false);
+      if (onAnimationEnd) {
+        onAnimationEnd(earnedPoints);
+      }
+    }, animationStartDelay + animationDuration);
 
     return () => {
       clearTimeout(startTimer);
       clearTimeout(endTimer);
     };
-  }, [earnedPoints, onAnimationEnd, isAdClick, startAnimations]);
+  }, [earnedPoints, onAnimationEnd, isAdClick, startAnimations, isComponentMounted]);
 
   const handleAnimationClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,14 +145,13 @@ export function PointAnimation({
           </div>
         </div>
       </div>
-      {startBalloonAnimation && (
-        <DynamicBalloonAnimation
-          userId={userId}
-          currentUser={currentUser}
-          earnedPoints={earnedPoints}
-          donationPoints={donationPoints}
-        />
-      )}
+      <DynamicBalloonAnimation
+        userId={userId}
+        currentUser={currentUser}
+        earnedPoints={earnedPoints}
+        donationPoints={donationPoints}
+        startAnimation={startBalloonAnimation}
+      />
       <div
         className="fixed -top-[264px] left-0 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-[1005]"
         onClick={handleAnimationClick}

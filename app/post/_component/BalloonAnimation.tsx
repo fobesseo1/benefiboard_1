@@ -1,8 +1,8 @@
 'use client';
 
-import { CurrentUserType } from '@/types/types';
 import React, { useEffect, useState } from 'react';
 import { useSpring, animated, config } from 'react-spring';
+import { CurrentUserType } from '@/types/types';
 
 const colors = ['#FBCFE8', '#F9A8D4', '#F472B6', '#F0ABFC', '#E879F9'];
 
@@ -22,17 +22,14 @@ const Balloon: React.FC<BalloonProps> = ({ delay, maxWidth, content, contentType
 
   const props = useSpring({
     from: {
-      transform: `translateX(${startX}px) translateY(0vh) scale(0.5)`,
+      transform: `translateX(${startX}px) translateY(80vh) scale(0.5)`,
       opacity: 0,
     },
     to: async (next) => {
-      await next({
-        opacity: 0.75,
-        transform: `translateX(${startX}px) translateY(-20vh) scale(1)`,
-      });
+      await next({ opacity: 0.75, transform: `translateX(${startX}px) translateY(20vh) scale(1)` });
       await next({ transform: `translateX(${endX}px) translateY(-40vh) scale(1)` });
     },
-    config: { ...config.gentle, duration: 2000 }, // 애니메이션 시간을 3000ms로 줄임
+    config: { ...config.gentle, duration: 2000 },
     delay,
   });
 
@@ -68,6 +65,7 @@ interface BalloonAnimationProps {
   currentUser: CurrentUserType | null;
   earnedPoints: number;
   donationPoints: number;
+  startAnimation: boolean;
 }
 
 export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
@@ -75,26 +73,15 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
   currentUser,
   earnedPoints,
   donationPoints,
+  startAnimation,
 }) => {
   const [balloons, setBalloons] = useState<
     Array<{ content: React.ReactNode; contentType: ContentType; key: string }>
   >([]);
   const [maxWidth, setMaxWidth] = useState(320);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    const handleResize = () => {
-      setMaxWidth(window.innerWidth >= 1024 ? 640 : 320);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
+    if (!startAnimation) return;
 
     const newBalloons: [React.ReactNode, ContentType, string][] = [
       [
@@ -167,9 +154,17 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
 
     newBalloons.sort(() => Math.random() - 0.5);
     setBalloons(newBalloons.map(([content, contentType, key]) => ({ content, contentType, key })));
-  }, [userId, currentUser, earnedPoints, donationPoints, isClient]);
 
-  if (!isClient) return null;
+    const handleResize = () => {
+      setMaxWidth(window.innerWidth >= 1024 ? 640 : 320);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [userId, currentUser, earnedPoints, donationPoints, startAnimation]);
+
+  if (!startAnimation) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2000 }}>
