@@ -3,15 +3,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
-import PointSlotAnimation from '@/app/_components/PointSlotAnimation';
 import { CurrentUserType } from '@/types/types';
 import { EmojiHaha, EmojiSad } from '@/app/_emoji-gather/emoji-gather';
-
-const DynamicBalloonAnimation = dynamic(
-  () => import('./BalloonAnimation').then((mod) => mod.BalloonAnimation),
-  { ssr: false, loading: () => <div style={{ display: 'none' }} /> }
-);
+import PointSlotAnimation from '@/app/_components/PointSlotAnimation';
+import { BalloonAnimation } from './BalloonAnimation';
 
 interface PointAnimationProps {
   userId: string | null;
@@ -44,23 +39,13 @@ export function PointAnimation({
   const [showAnimation, setShowAnimation] = useState(false);
   const [totalPoints, setTotalPoints] = useState(initialPoints);
   const [startBalloonAnimation, setStartBalloonAnimation] = useState(false);
-  const [isComponentMounted, setIsComponentMounted] = useState(false);
-
-  useEffect(() => {
-    setIsComponentMounted(true);
-    return () => setIsComponentMounted(false);
-  }, []);
 
   const startAnimations = useCallback(() => {
-    if (isComponentMounted) {
-      setShowAnimation(true);
-      setTimeout(() => setStartBalloonAnimation(true), 100);
-    }
-  }, [isComponentMounted]);
+    setShowAnimation(true);
+    setStartBalloonAnimation(true);
+  }, []);
 
   useEffect(() => {
-    if (!isComponentMounted) return;
-
     const animationStartDelay = 500;
     const animationDuration = isAdClick
       ? 800
@@ -82,7 +67,7 @@ export function PointAnimation({
       clearTimeout(startTimer);
       clearTimeout(endTimer);
     };
-  }, [earnedPoints, onAnimationEnd, isAdClick, startAnimations, isComponentMounted]);
+  }, [earnedPoints, onAnimationEnd, isAdClick, startAnimations]);
 
   const handleAnimationClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -145,13 +130,15 @@ export function PointAnimation({
           </div>
         </div>
       </div>
-      <DynamicBalloonAnimation
-        userId={userId}
-        currentUser={currentUser}
-        earnedPoints={earnedPoints}
-        donationPoints={donationPoints}
-        startAnimation={startBalloonAnimation}
-      />
+      {startBalloonAnimation && (
+        <BalloonAnimation
+          userId={userId}
+          currentUser={currentUser}
+          earnedPoints={earnedPoints}
+          donationPoints={donationPoints}
+          startAnimation={startBalloonAnimation}
+        />
+      )}
       <div
         className="fixed -top-[264px] left-0 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-[1005]"
         onClick={handleAnimationClick}
