@@ -22,14 +22,14 @@ const Balloon: React.FC<BalloonProps> = ({ delay, maxWidth, content, contentType
 
   const props = useSpring({
     from: {
-      transform: `translateX(${startX}px) translateY(80vh) scale(0.5)`,
+      transform: `translateX(${startX}px) translateY(20vh) scale(0.5)`,
       opacity: 0,
     },
     to: async (next) => {
-      await next({ opacity: 0.75, transform: `translateX(${startX}px) translateY(20vh) scale(1)` });
+      await next({ opacity: 0.75, transform: `translateX(${startX}px) translateY(0vh) scale(1)` });
       await next({ transform: `translateX(${endX}px) translateY(-40vh) scale(1)` });
     },
-    config: { ...config.gentle, duration: 4000 },
+    config: { ...config.gentle, duration: 1500 }, // 애니메이션 시간을 3000ms로 줄임
     delay,
   });
 
@@ -77,8 +77,22 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
     Array<{ content: React.ReactNode; contentType: ContentType; key: string }>
   >([]);
   const [maxWidth, setMaxWidth] = useState(320);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+    const handleResize = () => {
+      setMaxWidth(window.innerWidth >= 1024 ? 640 : 320);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
     const newBalloons: [React.ReactNode, ContentType, string][] = [
       [
         <div key="earned1">
@@ -148,19 +162,11 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
       ],
     ];
 
-    // Shuffle the array to randomize the order
     newBalloons.sort(() => Math.random() - 0.5);
-
     setBalloons(newBalloons.map(([content, contentType, key]) => ({ content, contentType, key })));
+  }, [userId, currentUser, earnedPoints, donationPoints, isClient]);
 
-    const handleResize = () => {
-      setMaxWidth(window.innerWidth >= 1024 ? 640 : 320);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [userId, currentUser, earnedPoints, donationPoints]);
+  if (!isClient) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2000 }}>

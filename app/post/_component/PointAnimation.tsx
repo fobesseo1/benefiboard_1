@@ -1,10 +1,17 @@
 //app>post>_component>PointAnimation.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import PointSlotAnimation from '@/app/_components/PointSlotAnimation';
 import { CurrentUserType } from '@/types/types';
 import { EmojiHaha, EmojiSad } from '@/app/_emoji-gather/emoji-gather';
-import { BalloonAnimation } from './BalloonAnimation';
+
+const DynamicBalloonAnimation = dynamic(
+  () => import('./BalloonAnimation').then((mod) => mod.BalloonAnimation),
+  { ssr: false }
+);
 
 interface PointAnimationProps {
   userId: string | null;
@@ -112,7 +119,7 @@ export function PointAnimation({
           </div>
         </div>
       </div>
-      <BalloonAnimation
+      <DynamicBalloonAnimation
         userId={userId}
         currentUser={currentUser}
         earnedPoints={earnedPoints}
