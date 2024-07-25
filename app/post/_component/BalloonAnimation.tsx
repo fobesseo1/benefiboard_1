@@ -74,14 +74,14 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
   donationPoints,
 }) => {
   const [balloons, setBalloons] = useState<
-    Array<{ content: React.ReactNode; contentType: ContentType }>
+    Array<{ content: React.ReactNode; contentType: ContentType; key: string }>
   >([]);
   const [maxWidth, setMaxWidth] = useState(320);
 
   useEffect(() => {
-    const newBalloons: [React.ReactNode, ContentType][] = [
+    const newBalloons: [React.ReactNode, ContentType, string][] = [
       [
-        <div>
+        <div key="earned1">
           <p className="text-4xl font-bold">
             <span className="text-2xl">+</span>
             {earnedPoints}
@@ -94,9 +94,10 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
           </p>
         </div>,
         'earned',
+        'earned1',
       ],
       [
-        <div>
+        <div key="earned2">
           <p className="text-4xl font-bold">
             <span className="text-2xl">+</span>
             {earnedPoints}
@@ -109,9 +110,10 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
           </p>
         </div>,
         'earned',
+        'earned2',
       ],
       [
-        <div>
+        <div key="donation1">
           <p className="text-4xl font-bold">
             <span className="text-2xl">+</span>
             {donationPoints}
@@ -120,9 +122,10 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
           <p className="text-sm">{userId ? '기부완료' : '로그인시 기부'}</p>
         </div>,
         'donation',
+        'donation1',
       ],
       [
-        <div>
+        <div key="donation2">
           <p className="text-4xl font-bold">
             <span className="text-2xl">+</span>
             {donationPoints}
@@ -131,14 +134,16 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
           <p className="text-sm">{userId ? '기부완료' : '로그인시 기부'}</p>
         </div>,
         'donation',
+        'donation2',
       ],
       [
-        <div>
+        <div key="partner">
           <p className="text-xl font-semibold">
             ♡ {currentUser?.partner_name}
             <span className="text-sm"> 님에게 기부</span> ♡
           </p>
         </div>,
+        'partner',
         'partner',
       ],
     ];
@@ -146,7 +151,7 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
     // Shuffle the array to randomize the order
     newBalloons.sort(() => Math.random() - 0.5);
 
-    setBalloons(newBalloons.map(([content, contentType]) => ({ content, contentType })));
+    setBalloons(newBalloons.map(([content, contentType, key]) => ({ content, contentType, key })));
 
     const handleResize = () => {
       setMaxWidth(window.innerWidth >= 1024 ? 640 : 320);
@@ -159,10 +164,10 @@ export const BalloonAnimation: React.FC<BalloonAnimationProps> = ({
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2000 }}>
-      {balloons.map((balloon, i) => (
+      {balloons.map((balloon) => (
         <Balloon
-          key={i}
-          delay={i * 200}
+          key={balloon.key}
+          delay={balloons.indexOf(balloon) * 200}
           maxWidth={maxWidth}
           content={balloon.content}
           contentType={balloon.contentType}
