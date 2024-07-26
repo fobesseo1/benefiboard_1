@@ -43,6 +43,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   return (
     <div className="relative mx-4 lg:w-[948px] lg:mx-auto">
       <Ad_Rectangle_Updown />
+      <hr className="mt-4" />
       <Breadcrumbs category={post?.category} />
       <PostHeader
         title={post?.title}

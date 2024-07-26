@@ -97,7 +97,8 @@ export function AdContentCard({ handleAdClick, handleAdClose }: AdContentCardPro
           onPointerDown={(e) => e.stopPropagation()}
           onClick={handleButtonClick}
         >
-          자세히 확인하고 포인트 받기
+          광고링크 확인하고 &nbsp; <span className="text-xl font-semibold"> 빅포인트</span> &nbsp;
+          받기
         </Button>
         <div className="flex w-full justify-start items-center">
           <Button

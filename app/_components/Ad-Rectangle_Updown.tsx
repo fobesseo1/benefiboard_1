@@ -16,7 +16,7 @@ export default function Ad_Rectangle_Updown() {
 
   return (
     <>
-      <div className="ad-banner mx-auto h-24 flex flex-col relative  p-1 overflow-hidden">
+      <div className="ad-banner mx-auto h-24 flex flex-col relative  py-1 px-4 overflow-hidden w-full">
         <h2 className="text-xs">Ad 무료공익광고 관심부탁드려요!!</h2>
         <div className="flex-1 w-full h-full bg-gradient-to-t from-blue-100 to-blue-50 p-4">
           <img
@@ -26,7 +26,7 @@ export default function Ad_Rectangle_Updown() {
           />
         </div>
       </div>
-      <hr className="mt-4" />
+      {/* <hr className="mt-4" /> */}
     </>
   );
 }

@@ -38,6 +38,7 @@ export default function OnboardingLogicWrapper({
   return (
     <div className="w-full flex flex-col items-center gap-4 lg:w-[948px] lg:mx-auto">
       <WelcomeBanner />
+      <Ad_Rectangle_Updown />
       {currentUser && <CurrentPoints points={currentUser.current_points} />}
       <hr className="mx-auto border-gray-200 w-full" />
       <div className="w-full flex flex-col grid-cols-2 gap-12 lg:gap-8 lg:grid">{children}</div>

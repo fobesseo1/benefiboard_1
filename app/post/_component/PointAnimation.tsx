@@ -51,7 +51,7 @@ export function PointAnimation({
   // Memoize static content
   const pointsContent = useMemo(
     () => (
-      <div className="flex gap-8 mt-48">
+      <div className="flex gap-8 lg:mt-24">
         <div
           className={`flex flex-col justify-center items-center gap-2 ${
             earnedPoints === 0
