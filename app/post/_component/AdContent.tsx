@@ -99,7 +99,7 @@ export function AdContentCard({ handleAdClick, handleAdClose }: AdContentCardPro
         >
           자세히 확인하고 포인트 받기
         </Button>
-        <div className="flex w-full justify-start ">
+        <div className="flex w-full justify-start items-center">
           <Button
             variant="outline"
             onPointerDown={(e) => e.stopPropagation()}
@@ -110,8 +110,13 @@ export function AdContentCard({ handleAdClick, handleAdClose }: AdContentCardPro
           >
             광고닫기
           </Button>
-          <p className="flex-1 text-center text-sm tracking-tighter my-2">
-            좌우 스와이프하거나 드래그해도 닫혀요
+          <p className="flex-1 text-center text-sm tracking-tighter my-2 lg:hidden">
+            좌우로 스와이프하거나
+            <br />
+            드래그해도 닫혀요
+          </p>
+          <p className="flex-1 text-center text-sm tracking-tighter my-2 hidden lg:block">
+            좌우로 스와이프하거나 드래그해도 닫혀요
           </p>
         </div>
       </CardFooter>

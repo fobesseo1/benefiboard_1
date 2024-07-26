@@ -14,14 +14,14 @@ const FooterClient = ({ currentUser }: { currentUser: CurrentUserType | null }) 
   const router = useRouter();
 
   useEffect(() => {
-    router.prefetch('/post');
+    router.prefetch('/');
     router.prefetch('/goodluck');
     router.prefetch('/message');
   }, [router]);
 
   return (
     <>
-      <Link href="/post">
+      <Link href="/">
         <div className="flex flex-col justify-center items-center">
           <BiHomeAlt2 size={24} />
           <p className="text-[10px] text-gray-800 text-center">홈</p>

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { childCategoriesArray, parentCategoriesArray } from '../post/_action/category';
 import { CurrentUserType } from '@/types/types';
+import SignOut from '../auth/components/SignOut';
 
 interface CommonSheetProps {
   currentUser: CurrentUserType | null;
@@ -130,6 +131,10 @@ const CommonSheet: React.FC<CommonSheetProps> = ({ currentUser, triggerElement }
                 </div>
               </div>
             )}
+            <hr />
+            <div className="mt-8">
+              <SignOut />
+            </div>
           </div>
         </div>
       </SheetContent>

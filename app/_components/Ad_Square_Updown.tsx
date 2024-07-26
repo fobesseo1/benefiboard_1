@@ -15,8 +15,8 @@ export default function Ad_Square_Updown() {
   }, []);
 
   return (
-    <div className="ad-banner mx-auto  flex flex-col relative border-[1px] border-red-200 p-1 overflow-hidden">
-      <h2 className="text-xs">Ad 업다운 관심부탁드려요!!</h2>
+    <div className="ad-banner mx-auto  flex flex-col relative border-[1px] border-red-100 p-1 overflow-hidden">
+      <h2 className="text-xs">＊광고팝업＊</h2>
       <div className="flex-1 w-full h-full ">
         <img src="/ad/ad-updown.jpg" alt="Ad" className="object-cover w-full h-full" />
       </div>

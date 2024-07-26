@@ -74,7 +74,6 @@ export default function RepostPopup({ post, currentUser, onClose }: RepostPopupP
           </button>
           <div className="flex items-center mb-4">
             <BiArrowBack size={24} onClick={onClose} className="cursor-pointer" />
-            <h2 className="ml-2 text-xl font-semibold">Detail Repost</h2>
           </div>
 
           <Ad_Square_Updown />
@@ -93,12 +92,13 @@ export default function RepostPopup({ post, currentUser, onClose }: RepostPopupP
         </div>
 
         {/* 버튼 영역 */}
-        <div className=" p-4 -mt-4">
+        <div className=" pb-4 px-4 -mt-4">
           <Button
             onClick={handleButtonClick}
-            className="w-full mt-4 px-4 py-2 text-base bg-blue-500 text-white rounded hover:bg-blue-700"
+            className="w-full mt-4 px-4 py-8 text-base bg-blue-500 text-white rounded hover:bg-blue-700"
           >
-            AD 링크로 이동
+            광고 링크로 이동하고 &nbsp; <span className="text-xl font-semibold"> 빅포인트</span>{' '}
+            &nbsp; 받기
           </Button>
           <p className="text-center my-2">좌우 스와이프하거나 드래그해도 닫혀요</p>
         </div>
