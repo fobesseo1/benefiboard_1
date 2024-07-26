@@ -92,10 +92,10 @@ export default function AdAlert({
     // 광고 닫기
     setShowAd(false);
 
-    // 0.8초 후에 새 창에서 광고 URL 열기
+    // 1.5초 후에 새 창에서 광고 URL 열기
     setTimeout(() => {
       window.open(AD_URL, '_blank');
-    }, 800);
+    }, 1500);
   }, [userId, author_id, currentUser]);
 
   useEffect(() => {
