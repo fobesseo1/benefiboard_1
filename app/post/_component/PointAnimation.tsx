@@ -105,11 +105,11 @@ export function PointAnimation({
   useEffect(() => {
     preloadBalloonAnimation();
 
-    const animationStartDelay = 500;
+    const animationStartDelay = 200;
     const animationDuration = isAdClick
-      ? 800
+      ? 3000
       : earnedPoints >= 3 && earnedPoints < 100
-        ? 800
+        ? 3000
         : 5000;
 
     const startTimer = setTimeout(startAnimations, animationStartDelay);

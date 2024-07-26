@@ -103,8 +103,8 @@ export default function AdAlert({
     setShowAnimation(true);
 
     if (earnedPointsRef.current >= 3) {
-      // 애니메이션 시작 직후 광고 표시 예약
-      setTimeout(() => setShowAd(true), 500);
+      // 애니메이션 시작 직후 광고 표시 예약 빅보너스광고 표시 시간
+      setTimeout(() => setShowAd(true), 1500);
     }
 
     addPointsTimeoutRef.current = setTimeout(() => {
@@ -156,7 +156,6 @@ export default function AdAlert({
               onClick={(event) => event.stopPropagation()}
             >
               <div className="relative" style={{ transform: getTransformStyle() }}>
-                <p>컨텐트카드</p>
                 <AdContentCard handleAdClick={handleAdClick} handleAdClose={handleAdClose} />
               </div>
             </div>
