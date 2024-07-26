@@ -5,172 +5,225 @@ import createSupabaseServerClient from '@/lib/supabse/server';
 import axios from 'axios';
 import cheerio from 'cheerio';
 
-async function scrapeWithTimeout(scrapeFunc: () => Promise<any>, timeout = 25000) {
-  return Promise.race([
-    scrapeFunc(),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Scraping timed out')), timeout)),
-  ]);
+const CHUNK_SIZE = 50;
+const MAX_ITEMS_POPULAR = 300;
+const MAX_ITEMS_BEST = 40;
+
+interface ScrapedItem {
+  site: string;
+  link: string;
+  title: string;
+  order: number;
+  batch: number;
 }
 
-export async function scrapeAndSave() {
+interface ScrapeResult {
+  success: boolean;
+  message: string;
+  nextIndex: number;
+  totalItems: number;
+  error?: string;
+}
+
+async function scrapeChunk(
+  items: ScrapedItem[],
+  startIndex: number,
+  supabase: any,
+  tableName: string
+): Promise<{ success: boolean; nextIndex: number; error?: string }> {
+  const endIndex = Math.min(startIndex + CHUNK_SIZE, items.length);
+  const chunk = items.slice(startIndex, endIndex);
+
+  const { error } = await supabase.from(tableName).insert(chunk);
+
+  if (error) {
+    console.error(`Error inserting data into ${tableName}:`, error);
+    return { success: false, nextIndex: startIndex, error: error.message };
+  }
+
+  return { success: true, nextIndex: endIndex };
+}
+
+async function scrapeWebsite(
+  url: string,
+  newBatch: number,
+  maxItems: number
+): Promise<ScrapedItem[]> {
+  const { data } = await axios.get(url);
+  const $ = cheerio.load(data);
+  const items: ScrapedItem[] = [];
+
+  $('.common_list li').each((index, element) => {
+    if (items.length >= maxItems) return false;
+
+    const site = $(element).find('.badge').text();
+    const link = $(element).find('a').attr('href');
+    const title = $(element).find('a').text();
+
+    if (link && title && site) {
+      items.push({ site, link, title, order: index + 1, batch: newBatch });
+    }
+  });
+
+  return items;
+}
+
+async function getLatestBatch(supabase: any, tableName: string): Promise<number> {
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('batch')
+    .order('batch', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error(`Error fetching latest batch from ${tableName}:`, error);
+    throw error;
+  }
+
+  return data.length > 0 ? data[0].batch : 0;
+}
+
+async function deleteOldBatch(supabase: any, tableName: string, batchToDelete: number) {
+  const { error } = await supabase.from(tableName).delete().eq('batch', batchToDelete);
+  if (error) {
+    console.error(`Error deleting batch ${batchToDelete} from ${tableName}:`, error);
+    throw error;
+  }
+}
+
+export async function scrapeAndSave(startIndex = 0, isFreshStart = false): Promise<ScrapeResult> {
   const supabase = await createSupabaseServerClient();
+  const tableName = 'repost_data';
 
   try {
-    const result = await scrapeWithTimeout(async () => {
-      // 최신 회차 값을 가져오기
-      const { data: latestBatchData, error: latestBatchError } = await supabase
-        .from('repost_data')
-        .select('batch')
+    let items: ScrapedItem[];
+    let newBatch: number;
+
+    if (isFreshStart) {
+      const latestBatch = await getLatestBatch(supabase, tableName);
+      newBatch = latestBatch + 1;
+      items = await scrapeWebsite('https://gorani.kr/popular/main', newBatch, MAX_ITEMS_POPULAR);
+
+      // Save all scraped items to the database
+      const { error } = await supabase.from(tableName).insert(items);
+      if (error) {
+        throw new Error('Error saving scraped items to database');
+      }
+    } else {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
         .order('batch', { ascending: false })
-        .limit(1);
+        .limit(MAX_ITEMS_POPULAR);
 
-      if (latestBatchError) {
-        console.error('Error fetching latest batch:', latestBatchError);
-        return { success: false, error: latestBatchError };
+      if (error) {
+        throw new Error('Error fetching latest batch');
       }
 
-      const latestBatch = latestBatchData.length > 0 ? latestBatchData[0].batch : 0;
-      const newBatch = latestBatch + 1;
+      newBatch = data[0]?.batch || 1;
+      items = data;
+    }
 
-      // HTML 가져오기
-      const { data } = await axios.get('https://gorani.kr/popular/main');
+    const totalItems = items.length;
+    const endIndex = Math.min(startIndex + CHUNK_SIZE, totalItems);
 
-      // HTML 파싱
-      const $ = cheerio.load(data);
-      const items: { site: string; link: string; title: string; order: number; batch: number }[] =
-        [];
-
-      $('.common_list li').each((index, element) => {
-        const site = $(element).find('.badge').text();
-        const link = $(element).find('a').attr('href');
-        const title = $(element).find('a').text();
-
-        if (link && title && site) {
-          items.push({ site, link, title, order: index + 1, batch: newBatch });
-        }
-      });
-
-      // 데이터 삽입
-      for (const item of items) {
-        const { error } = await supabase.from('repost_data').insert([
-          {
-            link: item.link,
-            title: item.title,
-            site: item.site,
-            order: item.order,
-            batch: item.batch,
-          },
-        ]);
-
-        if (error) {
-          console.error('Error inserting data:', error);
-          return { success: false, error };
-        }
-      }
-
-      // 오래된 회차 삭제
+    if (startIndex >= totalItems) {
       if (newBatch >= 9) {
-        const batchToDelete = newBatch - 8;
-        const { error } = await supabase.from('repost_data').delete().eq('batch', batchToDelete);
-
-        if (error) {
-          console.error(`Error deleting batch ${batchToDelete}:`, error);
-          return { success: false, error };
-        }
+        await deleteOldBatch(supabase, tableName, newBatch - 8);
       }
-
-      return { success: true };
-    });
-
-    return { success: true, message: 'Data successfully scraped and saved' };
+      return {
+        success: true,
+        message: 'All data successfully scraped and saved',
+        nextIndex: totalItems,
+        totalItems: totalItems,
+      };
+    } else {
+      return {
+        success: true,
+        message: 'Partial data scraped',
+        nextIndex: endIndex,
+        totalItems: totalItems,
+      };
+    }
   } catch (error: unknown) {
     console.error('Error in scrapeAndSave:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      message: 'An unknown error occurred',
+      nextIndex: startIndex,
+      totalItems: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
-export async function scrapeAndSaveBest() {
+export async function scrapeAndSaveBest(
+  startIndex = 0,
+  isFreshStart = false
+): Promise<ScrapeResult> {
   const supabase = await createSupabaseServerClient();
+  const tableName = 'repost_best_data';
 
   try {
-    const result = await scrapeWithTimeout(async () => {
-      // 최신 회차 값을 가져오기
-      const { data: latestBatchData, error: latestBatchError } = await supabase
-        .from('repost_best_data')
-        .select('batch')
+    let items: ScrapedItem[];
+    let newBatch: number;
+
+    if (isFreshStart) {
+      const latestBatch = await getLatestBatch(supabase, tableName);
+      newBatch = latestBatch + 1;
+      items = await scrapeWebsite('https://gorani.kr/best/main/gorani', newBatch, MAX_ITEMS_BEST);
+    } else {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
         .order('batch', { ascending: false })
         .limit(1);
 
-      if (latestBatchError) {
-        console.error('Error fetching latest batch:', latestBatchError);
-        return { success: false, error: latestBatchError };
+      if (error) {
+        throw new Error('Error fetching latest batch');
       }
 
-      const latestBatch = latestBatchData.length > 0 ? latestBatchData[0].batch : 0;
-      const newBatch = latestBatch + 1;
+      newBatch = data[0]?.batch || 1;
+      items = data;
+    }
 
-      // HTML 가져오기
-      const { data } = await axios.get('https://gorani.kr/best/main/gorani');
+    const result = await scrapeChunk(items, startIndex, supabase, tableName);
+    if (!result.success) {
+      return {
+        success: false,
+        message: 'Error scraping chunk',
+        nextIndex: result.nextIndex,
+        totalItems: items.length,
+        error: result.error,
+      };
+    }
 
-      // HTML 파싱
-      const $ = cheerio.load(data);
-      const items: { site: string; link: string; title: string; order: number; batch: number }[] =
-        [];
-
-      $('.common_list li').each((index, element) => {
-        const site = $(element).find('.badge').text();
-        const link = $(element).find('a').attr('href');
-        const title = $(element).find('a').text();
-
-        if (link && title && site) {
-          items.push({ site, link, title, order: index + 1, batch: newBatch });
-        }
-      });
-
-      // 데이터 삽입
-      for (const item of items) {
-        const { error } = await supabase.from('repost_best_data').insert([
-          {
-            link: item.link,
-            title: item.title,
-            site: item.site,
-            order: item.order,
-            batch: item.batch,
-          },
-        ]);
-
-        if (error) {
-          console.error('Error inserting data:', error);
-          return { success: false, error };
-        }
-      }
-
-      // 오래된 회차 삭제
+    if (result.nextIndex < items.length) {
+      return {
+        success: true,
+        message: 'Partial best data scraped',
+        nextIndex: result.nextIndex,
+        totalItems: items.length,
+      };
+    } else {
       if (newBatch >= 9) {
-        const batchToDelete = newBatch - 8;
-        const { error } = await supabase
-          .from('repost_best_data')
-          .delete()
-          .eq('batch', batchToDelete);
-
-        if (error) {
-          console.error(`Error deleting batch ${batchToDelete}:`, error);
-          return { success: false, error };
-        }
+        await deleteOldBatch(supabase, tableName, newBatch - 8);
       }
-
-      return { success: true };
-    });
-
-    return { success: true, message: 'Best data successfully scraped and saved' };
+      return {
+        success: true,
+        message: 'All best data successfully scraped and saved',
+        nextIndex: items.length,
+        totalItems: items.length,
+      };
+    }
   } catch (error: unknown) {
     console.error('Error in scrapeAndSaveBest:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      message: 'An unknown error occurred',
+      nextIndex: startIndex,
+      totalItems: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

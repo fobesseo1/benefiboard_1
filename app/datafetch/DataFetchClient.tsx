@@ -1,24 +1,55 @@
-// app/datafetch/DataFetchClient.tsx
+//app>datafetch>DataFetchClient.tsx
+
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { scrapeAndSave, scrapeAndSaveBest } from '../actions/scrapeActions';
 
-const DataFetchClient = () => {
+interface ScrapeResult {
+  success: boolean;
+  message: string;
+  nextIndex: number;
+  totalItems: number;
+  error?: string;
+}
+
+const DataFetchClient: React.FC = () => {
   const [message, setMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleScrape = async (action: 'scrape' | 'scrapeBest') => {
+    setIsLoading(true);
     setMessage('Scraping in progress...');
-    try {
-      const result = action === 'scrape' ? await scrapeAndSave() : await scrapeAndSaveBest();
+    let nextIndex = 0;
+    let isFreshStart = true;
 
-      setMessage(
-        result.success
-          ? result.message || 'Operation completed successfully'
-          : `Error: ${result.error || 'An unknown error occurred'}`
-      );
+    try {
+      while (true) {
+        const result: ScrapeResult =
+          action === 'scrape'
+            ? await scrapeAndSave(nextIndex, isFreshStart)
+            : await scrapeAndSaveBest(nextIndex, isFreshStart);
+
+        if (!result.success) {
+          setMessage(`Error: ${result.error || 'An unknown error occurred'}`);
+          break;
+        }
+
+        nextIndex = result.nextIndex;
+        const progress = Math.round((nextIndex / result.totalItems) * 100);
+        setMessage(`Scraping in progress... ${progress}% complete`);
+
+        if (nextIndex >= result.totalItems) {
+          setMessage(result.message);
+          break;
+        }
+
+        isFreshStart = false;
+      }
     } catch (error) {
       setMessage('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -29,12 +60,14 @@ const DataFetchClient = () => {
         <button
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           onClick={() => handleScrape('scrape')}
+          disabled={isLoading}
         >
           Scrape Data
         </button>
         <button
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
           onClick={() => handleScrape('scrapeBest')}
+          disabled={isLoading}
         >
           Scrape Best Data
         </button>
