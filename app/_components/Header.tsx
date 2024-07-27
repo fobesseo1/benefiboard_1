@@ -4,11 +4,12 @@ import Link from 'next/link';
 import HeaderBackClick from './HeaderBackClick';
 import HeaderCommonSheet from './HeaderCommonSheet';
 import { CurrentUserType } from '@/types/types';
+import NavigationMenu_lg from './NavigationMenu_lg';
 
 const Header = ({ currentUser }: { currentUser: CurrentUserType | null }) => {
   return (
-    <div className="fixed top-0 left-0 z-50 w-full   bg-white">
-      <header className="h-16 bg-white flex items-center justify-between px-6 border-b-[1px] border-gray-200 lg:w-[948px] mx-auto">
+    <div className="fixed top-0 left-0 z-50 w-full   bg-white ">
+      <header className="relative h-16 bg-white flex items-center justify-between px-6 border-b-[1px] border-gray-200 lg:w-[948px] mx-auto">
         <HeaderBackClick />
         <Link href="/">
           <Image
@@ -57,6 +58,9 @@ const Header = ({ currentUser }: { currentUser: CurrentUserType | null }) => {
           </div>
         )}
       </header>
+      <div className="w-[948px] h-16 hidden bg-white mx-auto p-4 lg:block">
+        <NavigationMenu_lg currentUser={currentUser} />
+      </div>
     </div>
   );
 };
