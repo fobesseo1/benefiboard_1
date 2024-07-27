@@ -178,20 +178,6 @@ export default function PagedPosts({
         localStorage.setItem(readPostsKey, updatedReadPosts);
       }
 
-      // 포인트 추가 로직을 백그라운드에서 실행
-      /* if (currentUser) {
-        // requestIdleCallback을 사용하여 브라우저가 idle 상태일 때 실행
-        requestIdleCallback(() => {
-          addPointsServerAction(
-            post.author_id,
-            currentUser.id,
-            currentUser.donation_id || undefined
-          ).catch((error) => {
-            console.error('Error adding points:', error);
-          });
-        });
-      } */
-
       // 포인트 추가 로직을 sendBeacon을 사용하여 실행
       if (currentUser) {
         const data = {

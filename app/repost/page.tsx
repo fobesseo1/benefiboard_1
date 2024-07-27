@@ -8,6 +8,7 @@ import { CurrentUserType } from '@/types/types';
 import Repost_list from './_component/repost_list';
 import Loading from '../loading';
 import Ad_Rectangle_Updown from '../_components/Ad-Rectangle_Updown';
+import Repost_list_Skeleton from './_component/Repost_list_Skeleton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -53,7 +54,7 @@ export default function RepostPage({ searchParams }: { searchParams: { page: str
         <h2 className="text-xl  ">실시간 인기 포스트</h2>
         <p className="text-sm text-gray-400">(주요 커뮤니티)</p>
       </div>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<Repost_list_Skeleton />}>
         <RepostContent page={page} />
       </Suspense>
     </div>

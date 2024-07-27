@@ -102,7 +102,7 @@ const StickerDisplay = ({ type, level }: StickerDisplayProps) => {
     <div className="mt-2 col-span-1 rounded-full flex flex-col gap-1 items-center justify-center">
       {/* 이미지부분 */}
       <div className="w-24 h-24 flex flex-col items-center justify-center relative border-b-2 border-gray-200">
-        <img src={src} alt="" className="object-cover hover:animate-bounce" />
+        <img src={src} alt="sticjerImage" className="object-cover hover:animate-bounce" />
         <div
           className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex  justify-center items-center"
           style={{ backgroundColor: stickerType.color }}

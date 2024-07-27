@@ -63,7 +63,7 @@ export default function TodayNoticePopup() {
               </p>
             </div>
             <div className="flex items-center justify-center animate-fade-in">
-              <img src="/mainPopupIcons/share50_icon.svg" alt="" />
+              <img src="/mainPopupIcons/share50_icon.svg" alt="shareIcon" />
             </div>
           </div>
 
@@ -74,7 +74,7 @@ export default function TodayNoticePopup() {
               <p>콘텐츠를 단지 즐기는 것만으로도 보상</p>
             </div>
             <div className="flex items-center justify-center animate-fade-in">
-              <img src="/mainPopupIcons/smartview_icon.svg" alt="" />
+              <img src="/mainPopupIcons/smartview_icon.svg" alt="smartviewIcon" />
             </div>
           </div>
           {/* 3. 의미 있는 기부 */}
@@ -84,7 +84,7 @@ export default function TodayNoticePopup() {
               <p>쉽고 간편하게 기부 참여</p>
             </div>
             <div className="flex items-center justify-center animate-fade-in">
-              <img src="/mainPopupIcons/donation_icon.svg" alt="" />
+              <img src="/mainPopupIcons/donation_icon.svg" alt="donationIcon" />
             </div>
           </div>
         </div>

@@ -7,6 +7,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  eslint: {
+    rules: {
+      '@next/next/no-img-element': 'off',
+    },
+  },
 };
 
 export default nextConfig;

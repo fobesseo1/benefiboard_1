@@ -8,6 +8,7 @@ import { CurrentUserType } from '@/types/types';
 import { fetchLatestBestBatches } from './utils';
 import Loading from '@/app/loading';
 import Ad_Rectangle_Updown from '@/app/_components/Ad-Rectangle_Updown';
+import Repost_list_Skeleton from '../_component/Repost_list_Skeleton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -53,7 +54,7 @@ export default function RepostBestPage({ searchParams }: { searchParams: { page:
         <h2 className="text-xl  ">오늘의 베스트 포스트</h2>
         <p className="text-sm text-gray-400">(주요 커뮤니티)</p>
       </div>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<Repost_list_Skeleton />}>
         <RepostBestContent page={page} />
       </Suspense>
     </div>

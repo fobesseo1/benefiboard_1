@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { listformatDate } from '@/lib/utils/formDate';
 import RepostPopup from './RepostPopup';
 import Link from 'next/link';
@@ -17,6 +17,8 @@ type RepostDataProps = {
   currentUser: CurrentUserType | null;
   linkPath: string;
   userId: string | null;
+  cacheKey: string;
+  cacheTime: number;
 };
 
 const siteColors: { [key: string]: string } = {
@@ -42,6 +44,8 @@ export default function Repost_list_mainpage({
   currentUser,
   linkPath,
   userId,
+  cacheKey,
+  cacheTime,
 }: RepostDataProps) {
   const [posts, setPosts] = useState<RepostType[]>(initialPosts || []);
   const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
@@ -49,6 +53,20 @@ export default function Repost_list_mainpage({
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
 
   useEffect(() => {
+    const cachedData = localStorage.getItem(cacheKey);
+    const cachedTime = localStorage.getItem(`${cacheKey}Time`);
+
+    if (cachedData && cachedTime) {
+      const now = new Date().getTime();
+      if (now - parseInt(cachedTime) < cacheTime) {
+        setPosts(JSON.parse(cachedData));
+      } else {
+        updateCache();
+      }
+    } else {
+      updateCache();
+    }
+
     const clearLocalStorageDaily = () => {
       const lastClear = localStorage.getItem('lastClear');
       const now = new Date().getTime();
@@ -75,7 +93,12 @@ export default function Repost_list_mainpage({
         }, {})
       );
     }
-  }, [userId]);
+  }, [initialPosts, cacheKey, cacheTime, userId]);
+
+  const updateCache = () => {
+    localStorage.setItem(cacheKey, JSON.stringify(initialPosts));
+    localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
+  };
 
   const handlePostClick = useCallback(
     async (post: RepostType) => {

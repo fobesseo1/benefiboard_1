@@ -1,11 +1,13 @@
 // app/post/page.tsx
+import { Suspense } from 'react';
+import PagedPosts from './_component/PagedPosts';
+import PagedPostsSkeleton from './_component/PagedPostsSkeleton';
 import { cache } from 'react';
 import createSupabaseServerClient from '@/lib/supabse/server';
 import SearchBar from './_component/SearchBar';
 import { getCurrentUser } from '@/lib/cookies';
 import FixedIconGroup from './_component/FixedIconGroup';
 import { findCategoryNameById } from './_action/category';
-import PagedPosts from './_component/PagedPosts';
 import { CurrentUserType, PostType } from '@/types/types';
 import Ad_Rectangle_Updown from '../_components/Ad-Rectangle_Updown';
 
@@ -49,28 +51,47 @@ const fetchInitialPosts = cache(
   }
 );
 
-export default async function PostPage({ searchParams }: { searchParams: { page: string } }) {
+export default function PostPage({ searchParams }: { searchParams: { page: string } }) {
   const page = parseInt(searchParams.page || '1', 10);
-  const { posts: initialPosts, totalCount } = await fetchInitialPosts(page);
-  const currentUser: CurrentUserType | null = await getCurrentUser();
-
-  const searchSuggestions = Array.from(new Set(initialPosts.map((post) => post.title)));
 
   return (
     <div className="pt-2">
-      <Ad_Rectangle_Updown />
+      <div className="lg:w-[948px] mx-auto">
+        <Ad_Rectangle_Updown />
+      </div>
       <h2 className="text-xl text-center font-bold my-4 mx-auto">전체 포스트</h2>
-      <SearchBar searchUrl="/post/search" suggestions={searchSuggestions} />
-      <div className="flex flex-col px-4 pt-4 ">
-        <PagedPosts
-          initialPosts={initialPosts}
-          userId={currentUser?.id ?? null}
-          currentUser={currentUser}
-          totalCount={totalCount}
-          currentPage={page}
-        />
+      <Suspense fallback={<div>검색창 로딩 중...</div>}>
+        <SearchBarWrapper page={page} />
+      </Suspense>
+      <div className="flex flex-col px-4 pt-4">
+        <Suspense fallback={<PagedPostsSkeleton />}>
+          <PostsContent page={page} />
+        </Suspense>
       </div>
       <FixedIconGroup />
     </div>
+  );
+}
+
+// 새로운 컴포넌트: SearchBarWrapper
+async function SearchBarWrapper({ page }: { page: number }) {
+  const { posts: initialPosts } = await fetchInitialPosts(page);
+  const searchSuggestions = Array.from(new Set(initialPosts.map((post) => post.title)));
+  return <SearchBar searchUrl="/post/search" suggestions={searchSuggestions} />;
+}
+
+// 새로운 컴포넌트: PostsContent
+async function PostsContent({ page }: { page: number }) {
+  const { posts: initialPosts, totalCount } = await fetchInitialPosts(page);
+  const currentUser = await getCurrentUser();
+
+  return (
+    <PagedPosts
+      initialPosts={initialPosts}
+      userId={currentUser?.id ?? null}
+      currentUser={currentUser}
+      totalCount={totalCount}
+      currentPage={page}
+    />
   );
 }

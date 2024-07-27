@@ -1,44 +1,71 @@
 // app/page.tsx
-
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
 import { fetchPosts, fetchBestReposts, fetchBasicReposts } from './actions/mainPageActions';
-import SkeletonLoader from './_components/SkeletonLoader';
 import OnboardingLogicWrapper from './_components/OnboardingLogicWrapper';
 import RepostSection from './_components/RepostSection';
 import PostsSection from './_components/PostsSection';
+import RepostSectionSkeleton from './_components/RepostSectionSkeleton';
+import { CurrentUserType, RepostType } from '@/types/types';
+import PostsSectionSkeleton from './_components/PostsSectionSkeleton';
+
+// RepostSectionWrapper 컴포넌트
+async function RepostSectionWrapper({
+  title,
+  fetchFunction,
+  cacheKey,
+  cacheTime,
+  currentUser,
+  linkPath,
+}: {
+  title: string;
+  fetchFunction: () => Promise<RepostType[]>;
+  cacheKey: string;
+  cacheTime: number;
+  currentUser: CurrentUserType | null;
+  linkPath: string;
+}) {
+  const initialPosts = await fetchFunction();
+
+  return (
+    <RepostSection
+      title={title}
+      initialPosts={initialPosts}
+      cacheKey={cacheKey}
+      cacheTime={cacheTime}
+      currentUser={currentUser}
+      linkPath={linkPath}
+    />
+  );
+}
 
 export default async function Home() {
-  const currentUserPromise = getCurrentUser();
-  const bestRepostsPromise = fetchBestReposts();
-  const basicRepostsPromise = fetchBasicReposts();
+  const currentUser = await getCurrentUser();
   const postsPromise = fetchPosts();
-
-  const currentUser = await currentUserPromise;
 
   return (
     <OnboardingLogicWrapper currentUser={currentUser}>
-      <Suspense fallback={<SkeletonLoader />}>
-        <RepostSection
+      <Suspense fallback={<RepostSectionSkeleton />}>
+        <RepostSectionWrapper
           title="인기 커뮤니티 오늘의 베스트 10"
-          repostsPromise={bestRepostsPromise}
+          fetchFunction={fetchBestReposts}
           cacheKey="bestReposts"
           cacheTime={24 * 60 * 60 * 1000}
           currentUser={currentUser}
           linkPath="/repost/best"
         />
       </Suspense>
-      <Suspense fallback={<SkeletonLoader />}>
-        <RepostSection
+      <Suspense fallback={<RepostSectionSkeleton />}>
+        <RepostSectionWrapper
           title="인기 커뮤니티 실시간 베스트 10"
-          repostsPromise={basicRepostsPromise}
+          fetchFunction={fetchBasicReposts}
           cacheKey="basicReposts"
           cacheTime={3 * 60 * 60 * 1000}
           currentUser={currentUser}
           linkPath="/repost"
         />
       </Suspense>
-      <Suspense fallback={<SkeletonLoader />}>
+      <Suspense fallback={<PostsSectionSkeleton />}>
         <PostsSection postsPromise={postsPromise} currentUser={currentUser} />
       </Suspense>
     </OnboardingLogicWrapper>
