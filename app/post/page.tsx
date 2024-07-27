@@ -7,6 +7,7 @@ import FixedIconGroup from './_component/FixedIconGroup';
 import { findCategoryNameById } from './_action/category';
 import PagedPosts from './_component/PagedPosts';
 import { CurrentUserType, PostType } from '@/types/types';
+import Ad_Rectangle_Updown from '../_components/Ad-Rectangle_Updown';
 
 const CACHE_DURATION = 1 * 60 * 1000; // 1분 캐시
 
@@ -56,7 +57,9 @@ export default async function PostPage({ searchParams }: { searchParams: { page:
   const searchSuggestions = Array.from(new Set(initialPosts.map((post) => post.title)));
 
   return (
-    <div className="pt-4">
+    <div className="pt-2">
+      <Ad_Rectangle_Updown />
+      <h2 className="text-xl text-center font-bold my-4 mx-auto">전체 포스트</h2>
       <SearchBar searchUrl="/post/search" suggestions={searchSuggestions} />
       <div className="flex flex-col px-4 pt-4 ">
         <PagedPosts

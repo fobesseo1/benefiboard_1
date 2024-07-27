@@ -7,6 +7,7 @@ import { fetchLatestBatches } from './_actions/fetchRepostData';
 import { CurrentUserType } from '@/types/types';
 import Repost_list from './_component/repost_list';
 import Loading from '../loading';
+import Ad_Rectangle_Updown from '../_components/Ad-Rectangle_Updown';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -30,12 +31,14 @@ async function RepostContent({ page }: { page: number }) {
   return (
     <>
       <SearchBar searchUrl="/repost/search" suggestions={searchSuggestions} />
-      <Repost_list
-        initialPosts={repostData}
-        currentUser={currentUser ?? null}
-        isBestPosts={false}
-        totalCount={totalCount}
-      />
+      <div className="px-6">
+        <Repost_list
+          initialPosts={repostData}
+          currentUser={currentUser ?? null}
+          isBestPosts={false}
+          totalCount={totalCount}
+        />
+      </div>
     </>
   );
 }
@@ -44,15 +47,15 @@ export default function RepostPage({ searchParams }: { searchParams: { page: str
   const page = parseInt(searchParams.page || '1', 10);
 
   return (
-    <div className="pt-4">
-      <div className="flex flex-col px-6 pt-2 lg:w-[948px] mx-auto">
-        <h1 className="text-2xl font-semibold mt-4 mb-8 text-center">
-          인기 커뮤니티 실시간 베스트
-        </h1>
-        <Suspense fallback={<Loading />}>
-          <RepostContent page={page} />
-        </Suspense>
+    <div className="flex flex-col pt-2 lg:w-[948px] mx-auto">
+      <Ad_Rectangle_Updown />
+      <div className="flex flex-col text-center font-bold my-4 mx-auto">
+        <h2 className="text-xl  ">실시간 인기 포스트</h2>
+        <p className="text-sm text-gray-400">(주요 커뮤니티)</p>
       </div>
+      <Suspense fallback={<Loading />}>
+        <RepostContent page={page} />
+      </Suspense>
     </div>
   );
 }

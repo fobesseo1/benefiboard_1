@@ -7,6 +7,7 @@ import SearchBar from '../_component/SearchBar';
 import PagedPosts from '../_component/PagedPosts_Router';
 import FixedIconGroup from '../_component/FixedIconGroup';
 import { CurrentUserType, PostType } from '@/types/types';
+import Ad_Rectangle_Updown from '@/app/_components/Ad-Rectangle_Updown';
 
 // 이 시간 동안 페이지를 재검증하지 않습니다.
 export const revalidate = 180; // 3분
@@ -21,7 +22,6 @@ async function TopPostsContent({ page }: { page: number }) {
     <>
       <SearchBar searchUrl="/post/search" suggestions={searchSuggestions} />
       <div className="flex flex-col px-4 pt-4">
-        <h2 className="text-xl font-bold my-4 mx-auto">이번주 인기 게시물</h2>
         <PagedPosts
           initialPosts={topPosts}
           userId={currentUser?.id ?? null}
@@ -39,7 +39,9 @@ export default function PostBestPage({ searchParams }: { searchParams: { page: s
   const page = parseInt(searchParams.page || '1', 10);
 
   return (
-    <div className="pt-4">
+    <div className="pt-2">
+      <Ad_Rectangle_Updown />
+      <h2 className="text-xl text-center font-bold my-4 mx-auto">이번주 인기 포스트</h2>
       <Suspense fallback={<div>Loading...</div>}>
         <TopPostsContent page={page} />
       </Suspense>

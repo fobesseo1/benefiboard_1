@@ -23,7 +23,7 @@ const components_repost: { title: string; href: string; description: string }[] 
   },
   {
     title: '실시간 인기',
-    href: '/repoost',
+    href: '/repost',
     description: '실시간 주요 커뮤니티 인기 포스트 모음',
   },
 ];
