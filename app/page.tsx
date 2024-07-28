@@ -5,18 +5,23 @@ import OnboardingLogicWrapper from './_components/OnboardingLogicWrapper';
 import RepostSection from './_components/RepostSection';
 import PostsSection from './_components/PostsSection';
 import PostsSectionSkeleton from './_components/PostsSectionSkeleton';
+import dynamic from 'next/dynamic';
 
 // ISR 설정 최적화
 export const revalidate = 300; // 5분으로 조정
 
+const DynamicPostsSection = dynamic(() => import('./_components/PostsSection'), {
+  loading: () => <PostsSectionSkeleton />,
+});
+
 export default async function Home() {
   const currentUser = await getCurrentUser();
-  
+
   // 병렬로 데이터 fetching
   const [bestReposts, basicReposts, posts] = await Promise.all([
     fetchBestReposts(),
     fetchBasicReposts(),
-    fetchPosts()
+    fetchPosts(),
   ]);
 
   return (
@@ -37,7 +42,7 @@ export default async function Home() {
         currentUser={currentUser}
         linkPath="/repost"
       />
-      <PostsSection initialPosts={posts} currentUser={currentUser} />
+      <DynamicPostsSection initialPosts={posts} currentUser={currentUser} />
     </OnboardingLogicWrapper>
   );
 }
