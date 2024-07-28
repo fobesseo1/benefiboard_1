@@ -90,14 +90,37 @@ export default function Repost_list_mainpage({
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
 
-  useEffect(() => {
-    const cachedData = localStorage.getItem(`repost_${cacheKey}`);
-    const cachedTime = localStorage.getItem(`repost_${cacheKey}_time`);
+  const getLocalStorageItem = (key: string): any => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.error(`Error parsing localStorage item ${key}:`, error);
+      return null;
+    }
+  };
 
-    if (cachedData && cachedTime) {
+  const setLocalStorageItem = (key: string, value: any): void => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error setting localStorage item ${key}:`, error);
+    }
+  };
+
+  const updateCache = useCallback(() => {
+    setLocalStorageItem(`repost_${cacheKey}`, initialPosts);
+    setLocalStorageItem(`repost_${cacheKey}_time`, new Date().getTime().toString());
+  }, [cacheKey, initialPosts]);
+
+  useEffect(() => {
+    const cachedData = getLocalStorageItem(`repost_${cacheKey}`);
+    const cachedTime = getLocalStorageItem(`repost_${cacheKey}_time`);
+
+    if (Array.isArray(cachedData) && typeof cachedTime === 'number') {
       const now = new Date().getTime();
-      if (now - parseInt(cachedTime) < cacheTime) {
-        setPosts(JSON.parse(cachedData));
+      if (now - cachedTime < cacheTime) {
+        setPosts(cachedData);
       } else {
         updateCache();
       }
@@ -107,15 +130,12 @@ export default function Repost_list_mainpage({
 
     if (userId) {
       const readPostsKey = `repost_readPosts_${userId}`;
-      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '{}');
-      setReadPosts(storedReadPosts);
+      const storedReadPosts = getLocalStorageItem(readPostsKey);
+      if (storedReadPosts && typeof storedReadPosts === 'object') {
+        setReadPosts(storedReadPosts);
+      }
     }
-  }, [cacheKey, cacheTime, initialPosts, userId]);
-
-  const updateCache = () => {
-    localStorage.setItem(`repost_${cacheKey}`, JSON.stringify(initialPosts));
-    localStorage.setItem(`repost_${cacheKey}_time`, new Date().getTime().toString());
-  };
+  }, [cacheKey, cacheTime, initialPosts, userId, updateCache]);
 
   const handlePostClick = useCallback(
     async (post: RepostType) => {
