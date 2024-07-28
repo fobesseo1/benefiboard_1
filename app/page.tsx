@@ -55,6 +55,7 @@ export default async function Home() {
           linkPath="/repost/best"
         />
       </Suspense>
+      {/* <RepostSectionSkeleton /> */}
       <Suspense fallback={<RepostSectionSkeleton />}>
         <RepostSectionWrapper
           title="인기 커뮤니티 실시간 베스트 10"
