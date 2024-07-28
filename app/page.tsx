@@ -50,7 +50,7 @@ export default async function Home() {
           title="인기 커뮤니티 오늘의 베스트 10"
           fetchFunction={fetchBestReposts}
           cacheKey="bestReposts"
-          cacheTime={24 * 60 * 60 * 1000}
+          cacheTime={1 * 60 * 60 * 1000} //1시간 캐시 시간
           currentUser={currentUser}
           linkPath="/repost/best"
         />
@@ -60,7 +60,7 @@ export default async function Home() {
           title="인기 커뮤니티 실시간 베스트 10"
           fetchFunction={fetchBasicReposts}
           cacheKey="basicReposts"
-          cacheTime={3 * 60 * 60 * 1000}
+          cacheTime={15 * 60 * 1000} //15분 캐시 시간
           currentUser={currentUser}
           linkPath="/repost"
         />

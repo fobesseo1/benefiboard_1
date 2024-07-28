@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, useTransition } from 'react';
 import { listformatDate } from '@/lib/utils/formDate';
 import RepostPopup from './RepostPopup';
 import Link from 'next/link';
@@ -39,6 +39,44 @@ const siteColors: { [key: string]: string } = {
   뽐뿌: 'rose',
 };
 
+const RepostItem = React.memo(
+  ({
+    post,
+    isRead,
+    onClick,
+    getBadgeColor,
+  }: {
+    post: RepostType;
+    isRead: boolean;
+    onClick: () => void;
+    getBadgeColor: (site: string) => string;
+  }) => (
+    <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto">
+      <div className="flex justify-between items-center">
+        <div className="categoryCreatorComments flex gap-2 flex-1 overflow-hidden items-center">
+          <div className="flex items-center">
+            <Badge className={classNames(`bg-${getBadgeColor(post.site)}-500`)}>
+              {post.site || '아무거나'}
+            </Badge>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600">{listformatDate(post.created_at) || 'No time'}</p>
+      </div>
+      <div className="flex-1 pt-2 pb-2 cursor-pointer" onClick={onClick}>
+        <p
+          className={`font-semibold line-clamp-1 leading-tight tracking-tighter ${
+            isRead ? 'text-gray-400' : ''
+          }`}
+        >
+          {post.title}
+        </p>
+      </div>
+    </div>
+  )
+);
+
+RepostItem.displayName = 'RepostItem';
+
 export default function Repost_list_mainpage({
   initialPosts,
   currentUser,
@@ -51,6 +89,25 @@ export default function Repost_list_mainpage({
   const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
+
+  useEffect(() => {
+    const fetchLatestData = async () => {
+      try {
+        const response = await fetch(`/api/reposts?type=${cacheKey}`);
+        const latestPosts = await response.json();
+
+        if (JSON.stringify(latestPosts) !== JSON.stringify(posts)) {
+          setPosts(latestPosts);
+          localStorage.setItem(cacheKey, JSON.stringify(latestPosts));
+          localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest posts:', error);
+      }
+    };
+
+    fetchLatestData();
+  }, [cacheKey, posts]);
 
   useEffect(() => {
     const cachedData = localStorage.getItem(cacheKey);
@@ -95,10 +152,10 @@ export default function Repost_list_mainpage({
     }
   }, [initialPosts, cacheKey, cacheTime, userId]);
 
-  const updateCache = () => {
+  const updateCache = useCallback(() => {
     localStorage.setItem(cacheKey, JSON.stringify(initialPosts));
     localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
-  };
+  }, [cacheKey, initialPosts]);
 
   const handlePostClick = useCallback(
     async (post: RepostType) => {
@@ -144,34 +201,13 @@ export default function Repost_list_mainpage({
       </Link>
       {posts && posts.length > 0 ? (
         posts.map((post) => (
-          <div key={post.id}>
-            <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto">
-              <div className="flex justify-between items-center">
-                <div className="categoryCreatorComments flex gap-2 flex-1 overflow-hidden items-center">
-                  <div className="flex items-center">
-                    <Badge className={classNames(`bg-${getBadgeColor(post.site)}-500`)}>
-                      {post.site || '아무거나'}
-                    </Badge>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-600">
-                  {listformatDate(post.created_at) || 'No time'}
-                </p>
-              </div>
-              <div
-                className="flex-1 pt-2 pb-2 cursor-pointer"
-                onClick={() => handlePostClick(post)}
-              >
-                <p
-                  className={`font-semibold line-clamp-1 leading-tight tracking-tighter ${
-                    readPosts[post.id] ? 'text-gray-400' : ''
-                  }`}
-                >
-                  {post.title}
-                </p>
-              </div>
-            </div>
-          </div>
+          <RepostItem
+            key={post.id}
+            post={post}
+            isRead={readPosts[post.id] || false}
+            onClick={() => handlePostClick(post)}
+            getBadgeColor={getBadgeColor}
+          />
         ))
       ) : (
         <p className="hover:text-red-200 text-blue-400">No posts</p>

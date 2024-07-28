@@ -2,8 +2,10 @@
 
 'use client';
 
+'use client';
+
 import * as React from 'react';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { listformatDate } from '@/lib/utils/formDate';
 import RepostPopup from './RepostPopup';
@@ -26,6 +28,30 @@ type RepostDataProps = {
 
 const POSTS_PER_PAGE = 20;
 
+const RepostItem = React.memo(
+  ({ post, isRead, onClick }: { post: RepostType; isRead: boolean; onClick: () => void }) => (
+    <div className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto">
+      <div className="flex justify-between items-center">
+        <Badge className={classNames(`bg-${siteColors[post.site] || 'gray'}-500`)}>
+          {post.site || '아무거나'}
+        </Badge>
+        <p className="text-xs text-gray-600">{listformatDate(post.created_at) || 'No time'}</p>
+      </div>
+      <div className="flex-1 pt-2 pb-2 cursor-pointer" onClick={onClick}>
+        <p
+          className={`font-semibold line-clamp-1 leading-tight tracking-tighter ${
+            isRead ? 'text-gray-400' : ''
+          }`}
+        >
+          {post.title}
+        </p>
+      </div>
+    </div>
+  )
+);
+
+RepostItem.displayName = 'RepostItem';
+
 export default function Repost_list({
   initialPosts,
   currentUser,
@@ -45,6 +71,7 @@ export default function Repost_list({
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
+  const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
 
   const totalPages = Math.ceil(totalCount / POSTS_PER_PAGE);
 
@@ -67,10 +94,41 @@ export default function Repost_list({
     fetchPosts(page);
   }, [page, fetchPosts]);
 
+  useEffect(() => {
+    const readPostsKey = 'readPosts';
+    const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '{}');
+    const now = new Date().getTime();
+
+    // Remove posts older than 24 hours
+    const updatedReadPosts = Object.entries(storedReadPosts).reduce(
+      (acc, [id, timestamp]) => {
+        if (now - Number(timestamp) < 24 * 60 * 60 * 1000) {
+          acc[id] = true;
+        }
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
+
+    setReadPosts(updatedReadPosts);
+    localStorage.setItem(readPostsKey, JSON.stringify(updatedReadPosts));
+  }, []);
+
   const handlePostClick = useCallback(
     async (post: RepostType) => {
       setSelectedPost(post);
       setShowPopup(true);
+
+      // Mark post as read
+      const newReadPosts = { ...readPosts, [post.id]: true };
+      setReadPosts(newReadPosts);
+      localStorage.setItem(
+        'readPosts',
+        JSON.stringify({
+          ...JSON.parse(localStorage.getItem('readPosts') || '{}'),
+          [post.id]: new Date().getTime(),
+        })
+      );
 
       if (currentUser && currentUser.donation_id) {
         addDonationPoints(currentUser.id, currentUser.donation_id, 5)
@@ -78,7 +136,7 @@ export default function Repost_list({
           .catch((error) => console.error('Error adding donation points:', error));
       }
     },
-    [currentUser]
+    [currentUser, readPosts]
   );
 
   const handleSiteToggle = useCallback(
@@ -107,30 +165,21 @@ export default function Repost_list({
     [router, isBestPosts]
   );
 
-  const filteredPosts = posts.filter(
-    (post) => selectedSites.length === 0 || selectedSites.includes(post.site)
+  const filteredPosts = useMemo(
+    () => posts.filter((post) => selectedSites.length === 0 || selectedSites.includes(post.site)),
+    [posts, selectedSites]
   );
 
   return (
     <div>
       <SiteFilter selectedSites={selectedSites} onSiteToggle={handleSiteToggle} />
       {filteredPosts.map((post) => (
-        <div
+        <RepostItem
           key={`${post.id}-${post.site}`}
-          className="flex flex-col py-2 bg-white border-b-[1px] border-gray-200 mx-auto"
-        >
-          <div className="flex justify-between items-center">
-            <Badge className={classNames(`bg-${siteColors[post.site] || 'gray'}-500`)}>
-              {post.site || '아무거나'}
-            </Badge>
-            <p className="text-xs text-gray-600">{listformatDate(post.created_at) || 'No time'}</p>
-          </div>
-          <div className="flex-1 pt-2 pb-2 cursor-pointer" onClick={() => handlePostClick(post)}>
-            <p className="font-semibold line-clamp-1 leading-tight tracking-tighter">
-              {post.title}
-            </p>
-          </div>
-        </div>
+          post={post}
+          isRead={readPosts[post.id] || false}
+          onClick={() => handlePostClick(post)}
+        />
       ))}
       <div className="flex justify-between items-center mt-4">
         <Button onClick={() => handlePageChange(Math.max(page - 1, 1))} disabled={page === 1}>
