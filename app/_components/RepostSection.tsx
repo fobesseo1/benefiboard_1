@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { CurrentUserType, RepostType } from '@/types/types';
 import Repost_list_mainpage from '../repost/_component/repost_list_mainpage';
 
 interface RepostSectionProps {
   title: string;
-  repostsPromise: Promise<RepostType[]>;
+  initialReposts: RepostType[];
   cacheKey: string;
   cacheTime: number;
   currentUser: CurrentUserType | null;
@@ -15,13 +15,12 @@ interface RepostSectionProps {
 
 export default function RepostSection({
   title,
-  repostsPromise,
+  initialReposts,
   cacheKey,
   cacheTime,
   currentUser,
   linkPath,
 }: RepostSectionProps) {
-  const initialReposts = use(repostsPromise);
   const [reposts, setReposts] = useState<RepostType[]>(initialReposts);
 
   useEffect(() => {
@@ -41,7 +40,6 @@ export default function RepostSection({
   }, [cacheKey, cacheTime, initialReposts]);
 
   const updateCache = () => {
-    setReposts(initialReposts);
     localStorage.setItem(cacheKey, JSON.stringify(initialReposts));
     localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
   };
