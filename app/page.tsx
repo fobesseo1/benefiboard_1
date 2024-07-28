@@ -7,61 +7,35 @@ import OnboardingLogicWrapper from './_components/OnboardingLogicWrapper';
 import RepostSection from './_components/RepostSection';
 import PostsSection from './_components/PostsSection';
 import RepostSectionSkeleton from './_components/RepostSectionSkeleton';
-import { CurrentUserType, RepostType } from '@/types/types';
 import PostsSectionSkeleton from './_components/PostsSectionSkeleton';
 
-async function RepostSectionWrapper({
-  title,
-  fetchFunction,
-  cacheKey,
-  cacheTime,
-  currentUser,
-  linkPath,
-}: {
-  title: string;
-  fetchFunction: () => Promise<RepostType[]>;
-  cacheKey: string;
-  cacheTime: number;
-  currentUser: CurrentUserType | null;
-  linkPath: string;
-}) {
-  const initialPosts = await fetchFunction();
-
-  return (
-    <RepostSection
-      title={title}
-      initialPosts={initialPosts}
-      cacheKey={cacheKey}
-      cacheTime={cacheTime}
-      currentUser={currentUser}
-      linkPath={linkPath}
-    />
-  );
-}
+// ISR 설정: 15분마다 페이지 재생성
+export const revalidate = 900;
 
 export default async function Home() {
   const currentUser = await getCurrentUser();
+  const bestRepostsPromise = fetchBestReposts();
+  const basicRepostsPromise = fetchBasicReposts();
   const postsPromise = fetchPosts();
 
   return (
     <OnboardingLogicWrapper currentUser={currentUser}>
       <Suspense fallback={<RepostSectionSkeleton />}>
-        <RepostSectionWrapper
+        <RepostSection
           title="인기 커뮤니티 오늘의 베스트 10"
-          fetchFunction={fetchBestReposts}
+          repostsPromise={bestRepostsPromise}
           cacheKey="bestReposts"
-          cacheTime={1 * 60 * 60 * 1000} //1시간 캐시 시간
+          cacheTime={60 * 60 * 1000} // 1시간 캐시 시간
           currentUser={currentUser}
           linkPath="/repost/best"
         />
       </Suspense>
-      {/* <RepostSectionSkeleton /> */}
       <Suspense fallback={<RepostSectionSkeleton />}>
-        <RepostSectionWrapper
+        <RepostSection
           title="인기 커뮤니티 실시간 베스트 10"
-          fetchFunction={fetchBasicReposts}
+          repostsPromise={basicRepostsPromise}
           cacheKey="basicReposts"
-          cacheTime={15 * 60 * 1000} //15분 캐시 시간
+          cacheTime={15 * 60 * 1000} // 15분 캐시 시간
           currentUser={currentUser}
           linkPath="/repost"
         />
