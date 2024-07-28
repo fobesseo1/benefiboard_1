@@ -2,11 +2,9 @@
 
 'use client';
 
-'use client';
-
 import * as React from 'react';
 import { useCallback, useState, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { listformatDate } from '@/lib/utils/formDate';
 import RepostPopup from './RepostPopup';
 import { Badge } from '@/components/ui/badge';
@@ -18,15 +16,15 @@ import { Button } from '@/components/ui/button';
 import { fetchLatestBatches } from '../_actions/fetchRepostData';
 import { fetchLatestBestBatches } from '../best/utils';
 
+const POSTS_PER_PAGE = 20;
+
 type RepostDataProps = {
   initialPosts: RepostType[];
   currentUser: CurrentUserType | null;
   isBestPosts: boolean;
-  initialSearchTerm?: string;
   totalCount: number;
+  currentPage: number;
 };
-
-const POSTS_PER_PAGE = 20;
 
 const RepostItem = React.memo(
   ({ post, isRead, onClick }: { post: RepostType; isRead: boolean; onClick: () => void }) => (
@@ -56,18 +54,13 @@ export default function Repost_list({
   initialPosts,
   currentUser,
   isBestPosts,
-  initialSearchTerm = '',
   totalCount: initialTotalCount,
+  currentPage,
 }: RepostDataProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
   const [posts, setPosts] = useState<RepostType[]>(initialPosts);
   const [totalCount, setTotalCount] = useState<number>(initialTotalCount);
-  const [page, setPage] = useState<number>(() => {
-    const pageParam = searchParams.get('page');
-    return pageParam ? parseInt(pageParam, 10) : 1;
-  });
+  const [page, setPage] = useState<number>(currentPage);
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
@@ -77,6 +70,7 @@ export default function Repost_list({
 
   const fetchPosts = useCallback(
     async (pageNum: number) => {
+      if (pageNum === currentPage && posts.length > 0) return; // 첫 페이지는 서버에서 가져온 데이터 사용
       const fetchFunction = isBestPosts ? fetchLatestBestBatches : fetchLatestBatches;
       const { data: newPosts, totalCount: newTotalCount } = await fetchFunction(
         pageNum,
@@ -87,12 +81,14 @@ export default function Repost_list({
         setTotalCount(newTotalCount);
       }
     },
-    [isBestPosts]
+    [isBestPosts, currentPage, posts.length]
   );
 
   useEffect(() => {
-    fetchPosts(page);
-  }, [page, fetchPosts]);
+    if (page !== currentPage) {
+      fetchPosts(page);
+    }
+  }, [page, fetchPosts, currentPage]);
 
   useEffect(() => {
     const readPostsKey = 'readPosts';
