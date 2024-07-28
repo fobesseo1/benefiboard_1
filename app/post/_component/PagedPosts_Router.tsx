@@ -155,13 +155,32 @@ export default function PagedPosts({
   useEffect(() => {
     if (userId) {
       const readPostsKey = `readPosts_${userId}`;
-      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
-      setReadPosts(
-        storedReadPosts.reduce((acc: Record<string, boolean>, postId: string) => {
-          acc[postId] = true;
-          return acc;
-        }, {})
-      );
+      const storedReadPosts = localStorage.getItem(readPostsKey);
+      if (storedReadPosts) {
+        try {
+          const parsedReadPosts = JSON.parse(storedReadPosts);
+          if (Array.isArray(parsedReadPosts)) {
+            // 배열인 경우 객체로 변환
+            setReadPosts(
+              parsedReadPosts.reduce((acc: Record<string, boolean>, postId: string) => {
+                acc[postId] = true;
+                return acc;
+              }, {})
+            );
+          } else if (typeof parsedReadPosts === 'object' && parsedReadPosts !== null) {
+            // 이미 객체 형태인 경우 그대로 사용
+            setReadPosts(parsedReadPosts);
+          } else {
+            console.error('Invalid format for readPosts');
+            setReadPosts({});
+          }
+        } catch (error) {
+          console.error('Error parsing readPosts:', error);
+          setReadPosts({});
+        }
+      } else {
+        setReadPosts({});
+      }
     }
   }, [userId]);
 

@@ -1,4 +1,5 @@
 // app/page.tsx
+
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
 import { fetchPosts, fetchBestReposts, fetchBasicReposts } from './actions/mainPageActions';
@@ -9,7 +10,6 @@ import RepostSectionSkeleton from './_components/RepostSectionSkeleton';
 import { CurrentUserType, RepostType } from '@/types/types';
 import PostsSectionSkeleton from './_components/PostsSectionSkeleton';
 
-// RepostSectionWrapper 컴포넌트
 async function RepostSectionWrapper({
   title,
   fetchFunction,

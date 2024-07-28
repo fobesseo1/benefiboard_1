@@ -85,33 +85,14 @@ export default function Repost_list_mainpage({
   cacheKey,
   cacheTime,
 }: RepostDataProps) {
-  const [posts, setPosts] = useState<RepostType[]>(initialPosts || []);
+  const [posts, setPosts] = useState<RepostType[]>(initialPosts);
   const [readPosts, setReadPosts] = useState<Record<string, boolean>>({});
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPost, setSelectedPost] = useState<RepostType | null>(null);
 
   useEffect(() => {
-    const fetchLatestData = async () => {
-      try {
-        const response = await fetch(`/api/reposts?type=${cacheKey}`);
-        const latestPosts = await response.json();
-
-        if (JSON.stringify(latestPosts) !== JSON.stringify(posts)) {
-          setPosts(latestPosts);
-          localStorage.setItem(cacheKey, JSON.stringify(latestPosts));
-          localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
-        }
-      } catch (error) {
-        console.error('Failed to fetch latest posts:', error);
-      }
-    };
-
-    fetchLatestData();
-  }, [cacheKey, posts]);
-
-  useEffect(() => {
-    const cachedData = localStorage.getItem(cacheKey);
-    const cachedTime = localStorage.getItem(`${cacheKey}Time`);
+    const cachedData = localStorage.getItem(`repost_${cacheKey}`);
+    const cachedTime = localStorage.getItem(`repost_${cacheKey}_time`);
 
     if (cachedData && cachedTime) {
       const now = new Date().getTime();
@@ -124,54 +105,29 @@ export default function Repost_list_mainpage({
       updateCache();
     }
 
-    const clearLocalStorageDaily = () => {
-      const lastClear = localStorage.getItem('lastClear');
-      const now = new Date().getTime();
-
-      if (!lastClear || now - parseInt(lastClear) > 24 * 60 * 60 * 1000) {
-        localStorage.setItem('lastClear', now.toString());
-        localStorage.removeItem('roundsData');
-        localStorage.removeItem(`readPosts`);
-        if (userId) {
-          localStorage.removeItem(`readPosts_${userId}`);
-        }
-      }
-    };
-
-    clearLocalStorageDaily();
-
     if (userId) {
-      const readPostsKey = `readPosts_${userId}`;
-      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '[]');
-      setReadPosts(
-        storedReadPosts.reduce((acc: Record<string, boolean>, postId: string) => {
-          acc[postId] = true;
-          return acc;
-        }, {})
-      );
+      const readPostsKey = `repost_readPosts_${userId}`;
+      const storedReadPosts = JSON.parse(localStorage.getItem(readPostsKey) || '{}');
+      setReadPosts(storedReadPosts);
     }
-  }, [initialPosts, cacheKey, cacheTime, userId]);
+  }, [cacheKey, cacheTime, initialPosts, userId]);
 
-  const updateCache = useCallback(() => {
-    localStorage.setItem(cacheKey, JSON.stringify(initialPosts));
-    localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
-  }, [cacheKey, initialPosts]);
+  const updateCache = () => {
+    localStorage.setItem(`repost_${cacheKey}`, JSON.stringify(initialPosts));
+    localStorage.setItem(`repost_${cacheKey}_time`, new Date().getTime().toString());
+  };
 
   const handlePostClick = useCallback(
     async (post: RepostType) => {
       if (userId) {
         setReadPosts((prev) => ({ ...prev, [post.id]: true }));
-        const readPostsKey = `readPosts_${userId}`;
+        const readPostsKey = `repost_readPosts_${userId}`;
         const updatedReadPosts = { ...readPosts, [post.id]: true };
-        localStorage.setItem(readPostsKey, JSON.stringify(Object.keys(updatedReadPosts)));
+        localStorage.setItem(readPostsKey, JSON.stringify(updatedReadPosts));
 
         if (currentUser?.donation_id) {
           addDonationPoints(currentUser.id, currentUser.donation_id, 5)
-            .then(() =>
-              console.log(
-                `Added 5 donation points from ${currentUser.id} to ${currentUser.donation_id}`
-              )
-            )
+            .then(() => console.log(`Added 5 donation points`))
             .catch((error) => console.error('Error adding donation points:', error));
         }
       }
