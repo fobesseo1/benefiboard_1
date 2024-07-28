@@ -15,10 +15,11 @@ const DynamicPostsSection = dynamic(() => import('./_components/PostsSection'), 
 });
 
 export default async function Home() {
-  const currentUser = await getCurrentUser();
+  /* const currentUser = await getCurrentUser(); */
 
   // 병렬로 데이터 fetching
-  const [bestReposts, basicReposts, posts] = await Promise.all([
+  const [currentUser, bestReposts, basicReposts, posts] = await Promise.all([
+    getCurrentUser(),
     fetchBestReposts(),
     fetchBasicReposts(),
     fetchPosts(),
