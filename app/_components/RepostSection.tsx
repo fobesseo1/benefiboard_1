@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CurrentUserType, RepostType } from '@/types/types';
 import Repost_list_mainpage from '../repost/_component/repost_list_mainpage';
 
@@ -37,24 +37,29 @@ export default function RepostSection({
     } else {
       updateCache();
     }
-  }, []);
+  }, [cacheKey, cacheTime, initialReposts]);
 
   const updateCache = () => {
     localStorage.setItem(cacheKey, JSON.stringify(initialReposts));
     localStorage.setItem(`${cacheKey}Time`, new Date().getTime().toString());
   };
 
+  // Memoize the Repost_list_mainpage component
+  const MemoizedRepostList = useMemo(() => (
+    <Repost_list_mainpage
+      initialPosts={reposts}
+      cacheKey={cacheKey}
+      cacheTime={cacheTime}
+      currentUser={currentUser}
+      userId={currentUser?.id ?? null}
+      linkPath={linkPath}
+    />
+  ), [reposts, cacheKey, cacheTime, currentUser, linkPath]);
+
   return (
     <div className="w-full px-4 lg:w-[466px] lg:border border-gray-200 rounded-2xl">
       <h2 className="text-xl font-semibold lg:my-4 my-2">{title}</h2>
-      <Repost_list_mainpage
-        initialPosts={reposts}
-        cacheKey={cacheKey}
-        cacheTime={cacheTime}
-        currentUser={currentUser}
-        userId={currentUser?.id ?? null}
-        linkPath={linkPath}
-      />
+      {MemoizedRepostList}
     </div>
   );
 }

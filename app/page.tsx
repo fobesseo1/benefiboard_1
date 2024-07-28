@@ -6,14 +6,18 @@ import RepostSection from './_components/RepostSection';
 import PostsSection from './_components/PostsSection';
 import PostsSectionSkeleton from './_components/PostsSectionSkeleton';
 
-// ISR 설정: 15분마다 페이지 재생성
-export const revalidate = 900;
+// ISR 설정 최적화
+export const revalidate = 300; // 5분으로 조정
 
 export default async function Home() {
   const currentUser = await getCurrentUser();
-  const bestReposts = await fetchBestReposts();
-  const basicReposts = await fetchBasicReposts();
-  const postsPromise = fetchPosts();
+  
+  // 병렬로 데이터 fetching
+  const [bestReposts, basicReposts, posts] = await Promise.all([
+    fetchBestReposts(),
+    fetchBasicReposts(),
+    fetchPosts()
+  ]);
 
   return (
     <OnboardingLogicWrapper currentUser={currentUser}>
@@ -21,7 +25,7 @@ export default async function Home() {
         title="인기 커뮤니티 오늘의 베스트 10"
         initialReposts={bestReposts}
         cacheKey="bestReposts"
-        cacheTime={60 * 60 * 1000} // 1시간 캐시 시간
+        cacheTime={60 * 60 * 1000}
         currentUser={currentUser}
         linkPath="/repost/best"
       />
@@ -29,13 +33,11 @@ export default async function Home() {
         title="인기 커뮤니티 실시간 베스트 10"
         initialReposts={basicReposts}
         cacheKey="basicReposts"
-        cacheTime={15 * 60 * 1000} // 15분 캐시 시간
+        cacheTime={15 * 60 * 1000}
         currentUser={currentUser}
         linkPath="/repost"
       />
-      <Suspense fallback={<PostsSectionSkeleton />}>
-        <PostsSection postsPromise={postsPromise} currentUser={currentUser} />
-      </Suspense>
+      <PostsSection initialPosts={posts} currentUser={currentUser} />
     </OnboardingLogicWrapper>
   );
 }
