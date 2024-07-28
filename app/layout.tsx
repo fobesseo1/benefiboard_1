@@ -58,12 +58,12 @@ function UserAwareLayout({
 }) {
   return (
     <>
-      <Header currentUser={currentUser} />
-      <AuthManager />
+      {/* <Header currentUser={currentUser} />
+      <AuthManager /> */}
       <main className="flex-1 tracking-tight text-gray-800 leading-tight lg:pt-32 pt-16 pb-16 lg:pb-4">
         <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
       </main>
-      <Footer currentUser={currentUser} />
+      {/* <Footer currentUser={currentUser} /> */}
     </>
   );
 }
