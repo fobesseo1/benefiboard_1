@@ -1,5 +1,3 @@
-// app/page.tsx
-
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/cookies';
 import { fetchPosts, fetchBestReposts, fetchBasicReposts } from './actions/mainPageActions';
@@ -7,7 +5,6 @@ import OnboardingLogicWrapper from './_components/OnboardingLogicWrapper';
 import RepostSection from './_components/RepostSection';
 import PostsSection from './_components/PostsSection';
 import PostsSectionSkeleton from './_components/PostsSectionSkeleton';
-import { CurrentUserType, RepostType, PostType } from '@/types/types';
 
 // ISR 설정: 15분마다 페이지 재생성
 export const revalidate = 900;

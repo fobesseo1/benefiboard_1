@@ -37,7 +37,7 @@ export default function RepostSection({
     } else {
       updateCache();
     }
-  }, [cacheKey, cacheTime, initialReposts]);
+  }, []);
 
   const updateCache = () => {
     localStorage.setItem(cacheKey, JSON.stringify(initialReposts));
