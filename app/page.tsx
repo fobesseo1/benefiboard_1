@@ -64,6 +64,13 @@ const DynamicPostsSection = dynamic(() => import('./_components/PostsSection'), 
   loading: () => <PostsSectionSkeleton />,
 });
 
+type DataPromises = {
+  currentUser: Promise<CurrentUserType | null>;
+  bestReposts: Promise<RepostType[]>;
+  basicReposts: Promise<RepostType[]>;
+  posts: Promise<PostType[]>;
+};
+
 export default async function Home() {
   const dataPromises = {
     currentUser: getCurrentUser(),
@@ -89,8 +96,9 @@ export default async function Home() {
   };
 
   Object.keys(dataPromises).forEach((key, index) => {
-    if (results[index].status === 'fulfilled') {
-      data[key as keyof typeof data] = results[index].value as any;
+    const result = results[index];
+    if (result.status === 'fulfilled') {
+      data[key as keyof typeof data] = result.value as any;
     }
   });
 
